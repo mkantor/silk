@@ -2,6 +2,9 @@
   "compilerOptions": {
     "composite": true,
     "exactOptionalPropertyTypes": true,
+    "jsx": "react",
+    "jsxFactory": "createElement",
+    "jsxFragmentFactory": "createElement",
     "lib": ["es2023"],
     "module": "node20",
     "noPropertyAccessFromIndexSignature": true,
