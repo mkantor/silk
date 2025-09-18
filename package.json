@@ -1,14 +1,6 @@
 {
   "name": "silk",
   "version": "0.0.0",
-  "main": "dist/index.js",
-  "type": "module",
-  "scripts": {
-    "build": "tsc --build tsconfig.main.json",
-    "build:tests": "tsc --project tsconfig.main.json --outDir dist-test --declarationDir dist && tsc --build tsconfig.test.json",
-    "clean": "rm -rf dist* *.tsbuildinfo",
-    "test": "npm run build:tests && cd dist-test && node --test"
-  },
   "dependencies": {
     "@michijs/htmltype": "^0.4.2",
     "html-entities": "^2.6.0",
@@ -18,5 +10,13 @@
   "devDependencies": {
     "@types/node": "^24.5.1",
     "typescript": "^5.9.2"
-  }
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --build tsconfig.main.json",
+    "build:tests": "tsc --project tsconfig.main.json --outDir dist-test --declarationDir dist && tsc --build tsconfig.test.json",
+    "clean": "rm -rf dist* *.tsbuildinfo",
+    "test": "npm run build:tests && cd dist-test && node --test"
+  },
+  "type": "module"
 }
