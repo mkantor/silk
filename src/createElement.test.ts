@@ -192,5 +192,8 @@ try {
   createElement('a', { href: new URL() })
 
   // @ts-expect-error
+  createElement('a', { class: true })
+
+  // @ts-expect-error
   createElement('a', { 'non-existent-attribute': 'value' })
 } catch (_) {}

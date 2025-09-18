@@ -1,13 +1,18 @@
-import type { HTMLElements } from '@michijs/htmltype'
+import type { HTMLElements, ValueSets } from '@michijs/htmltype'
 import { escapeHTMLContent } from './escaping.js'
 
+/**
+ * Attribute values are strings, except for boolean attributes like `autoplay`.
+ */
 export type AttributesByTagName = {
   readonly [TagName in keyof HTMLElements<{}>]: {
-    readonly [AttributeName in keyof HTMLElements<{}>[TagName]]: Extract<
-      FixUpEventHandlers<HTMLElements<{}>[TagName][AttributeName]>,
-      // TODO: Only allow `boolean` for attributes that are actually boolean.
-      string | boolean
-    >
+    readonly [AttributeName in keyof HTMLElements<{}>[TagName]]: HTMLElements<{}>[TagName][AttributeName] extends infer AttributeValue
+      ? // @michijs/htmltype allows `string | number | boolean | null` for many
+        // attributes, but we should default to `string`.
+        ValueSets['default'] extends AttributeValue
+        ? string
+        : Extract<FixUpEventHandlers<AttributeValue>, string | boolean>
+      : never
   }
 }
 

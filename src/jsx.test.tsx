@@ -70,12 +70,6 @@ suite('jsx', _ => {
       ['<a href="https://example.com">', 'a', '</a>'],
     ))
 
-  test('element with boolean attribute', async _ =>
-    assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<video autoplay></video>),
-      ['<video autoplay>', '</video>'],
-    ))
-
   test('element with newlines in content', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<div>{'\n\n\n\n\n'}</div>),
@@ -143,16 +137,22 @@ suite('jsx', _ => {
       '</div>',
     ]))
 
+  test('element with boolean attribute', async _ =>
+    assert.deepEqual(
+      await arrayFromPossiblyDeferredHTML(<video autoplay></video>),
+      ['<video autoplay>', '</video>'],
+    ))
+
   test('false boolean attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<div class={false}></div>),
-      ['<div>', '</div>'],
+      await arrayFromPossiblyDeferredHTML(<video autoplay={false}></video>),
+      ['<video>', '</video>'],
     ))
 
   test('true boolean attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<div class={true}></div>),
-      ['<div class>', '</div>'],
+      await arrayFromPossiblyDeferredHTML(<video autoplay={true}></video>),
+      ['<video autoplay>', '</video>'],
     ))
 
   test('invalid attribute name', async _ =>
@@ -230,6 +230,9 @@ try {
 
   // @ts-expect-error
   ;<a href={new URL()}></a>
+
+  // @ts-expect-error
+  ;<div class={true}></div>
 
   // @ts-expect-error
   ;<a nonexistentattribute="value"></a>
