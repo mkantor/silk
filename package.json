@@ -12,7 +12,8 @@
   "dependencies": {
     "@michijs/htmltype": "^0.4.2",
     "html-entities": "^2.6.0",
-    "html-tags": "^5.1.0"
+    "html-tags": "^5.1.0",
+    "web-streams-polyfill": "^4.2.0"
   },
   "devDependencies": {
     "@types/node": "^24.5.1",
