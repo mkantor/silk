@@ -9,6 +9,9 @@
     "clean": "rm -rf dist* *.tsbuildinfo",
     "test": "npm run build:tests && cd dist-test && node --test"
   },
+  "dependencies": {
+    "html-entities": "^2.6.0"
+  },
   "devDependencies": {
     "@types/node": "^24.5.1",
     "typescript": "^5.9.2"
