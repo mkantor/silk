@@ -10,6 +10,7 @@
     "test": "npm run build:tests && cd dist-test && node --test"
   },
   "dependencies": {
+    "@michijs/htmltype": "^0.4.2",
     "html-entities": "^2.6.0"
   },
   "devDependencies": {
