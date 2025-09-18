@@ -11,6 +11,9 @@
     "@types/node": "^24.5.1",
     "typescript": "^5.9.2"
   },
+  "files": [
+    "dist/*"
+  ],
   "main": "dist/index.js",
   "repository": "github:mkantor/silk",
   "scripts": {
