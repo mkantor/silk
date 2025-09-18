@@ -12,6 +12,7 @@
     "typescript": "^5.9.2"
   },
   "main": "dist/index.js",
+  "repository": "github:mkantor/silk",
   "scripts": {
     "build": "tsc --build tsconfig.main.json",
     "build:tests": "tsc --project tsconfig.main.json --outDir dist-test --declarationDir dist && tsc --build tsconfig.test.json",
