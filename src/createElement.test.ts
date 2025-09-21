@@ -57,7 +57,7 @@ suite('createElement', _ => {
   test('void elements', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(createElement('br', {})),
-      ['<br/>'],
+      ['<br>'],
     ))
 
   test('void element with attribute', async _ =>
@@ -68,7 +68,7 @@ suite('createElement', _ => {
         }),
       ),
       [
-        '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="/>',
+        '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==">',
       ],
     ))
 
@@ -79,7 +79,7 @@ suite('createElement', _ => {
           title: 'hello"world',
         }),
       ),
-      ['<img title="hello&quot;world"/>'],
+      ['<img title="hello&quot;world">'],
     ))
 
   test('element with escaped text content', async _ =>

@@ -105,7 +105,7 @@ suite('jsx', _ => {
           <br></br>
         </>,
       ),
-      ['<br/>', '<br/>'],
+      ['<br>', '<br>'],
     ))
 
   test('self-closing non-void element', async _ =>
@@ -120,14 +120,14 @@ suite('jsx', _ => {
         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" />,
       ),
       [
-        '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="/>',
+        '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==">',
       ],
     ))
 
   test('void element with escaped attribute', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<img title='hello"world' />),
-      ['<img title="hello&quot;world"/>'],
+      ['<img title="hello&quot;world">'],
     ))
 
   test('element with escaped text content', async _ =>

@@ -48,7 +48,7 @@ export const createElement: (
 
     stream = isVoidElementTagName(tagNameOrFragmentFunction)
       ? ReadableStream.from([
-          '<'.concat(tagNameOrFragmentFunction, stringifiedAttributes, '/>'),
+          '<'.concat(tagNameOrFragmentFunction, stringifiedAttributes, '>'),
         ])
       : concatReadableStreams([
           ReadableStream.from([
