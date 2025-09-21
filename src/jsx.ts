@@ -1,17 +1,20 @@
-import { type AttributesByTagName } from './attributes.js'
+import type { AttributesByTagName } from './attributes.js'
 import type { PossiblyDeferredHTML } from './createElement.js'
-import { type VoidElementTagName } from './voidElements.js'
+import type { VoidElementTagName } from './voidElements.js'
 
 export { createElement } from './createElement.js'
 
 // See <https://www.typescriptlang.org/docs/handbook/jsx.html>.
 export declare namespace createElement.JSX {
-  type IntrinsicElements = {
-    [TagName in keyof AttributesByTagName]: AttributesByTagName[TagName] & {
+  type HTML<TagName extends keyof AttributesByTagName> =
+    AttributesByTagName[TagName] & {
       readonly [_children]?: TagName extends VoidElementTagName
         ? undefined
         : Element | readonly Element[]
     }
+
+  type IntrinsicElements = {
+    [TagName in keyof AttributesByTagName]: HTML<TagName>
   }
 
   type ElementChildrenAttribute = {
