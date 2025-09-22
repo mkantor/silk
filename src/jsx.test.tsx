@@ -96,6 +96,20 @@ suite('jsx', _ => {
       ['<div>', 'a', 'b', 'c', '</div>'],
     ))
 
+  test('element with style attribute', async _ => {
+    assert.deepEqual(
+      await arrayFromPossiblyDeferredHTML(<div style="color: red"></div>),
+      ['<div style="color: red">', '</div>'],
+    )
+  })
+
+  test('element with event handler attribute', async _ => {
+    assert.deepEqual(
+      await arrayFromPossiblyDeferredHTML(<div onclick="alert('hi')"></div>),
+      ['<div onclick="alert(&apos;hi&apos;)">', '</div>'],
+    )
+  })
+
   test('void elements', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(
