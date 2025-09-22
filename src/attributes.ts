@@ -1,4 +1,4 @@
-import type { HTMLElements, ValueSets } from '@michijs/htmltype'
+import type { CSSProperties, HTMLElements, ValueSets } from '@michijs/htmltype'
 import { escapeHTMLContent } from './escaping.js'
 
 /**
@@ -11,7 +11,7 @@ export type AttributesByTagName = {
         // attributes, but we should default to `string`.
         ValueSets['default'] extends AttributeValue
         ? string
-        : Extract<FixUpEventHandlers<AttributeValue>, string | boolean>
+        : Extract<FixUpTypedAttributes<AttributeValue>, string | boolean>
       : never
   }
 }
@@ -60,12 +60,14 @@ export const stringifyAttributes = (attributes: UnknownAttributes): string =>
     '',
   )
 
-// @michijs/htmltype uses functions for event handlers, but here they should be
-// strings (just like other attributes).
-type FixUpEventHandlers<AttributeValue> = AttributeValue extends (
+// @michijs/htmltype uses functions for event handlers and a `CSSProperties`
+// type for `style`, but here they should be strings (just like other attributes).
+type FixUpTypedAttributes<AttributeValue> = AttributeValue extends (
   ...parameters: never
 ) => unknown
   ? Exclude<AttributeValue, (...parameters: never) => unknown> | string
+  : AttributeValue extends CSSProperties
+  ? Exclude<AttributeValue, CSSProperties> | string
   : AttributeValue
 
 type UnknownAttributes = AttributesByTagName[keyof AttributesByTagName]
