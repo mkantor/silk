@@ -203,6 +203,13 @@ suite('jsx', _ => {
       ],
     )
   })
+
+  test('array children', async _ => {
+    assert.deepEqual(
+      await arrayFromPossiblyDeferredHTML(<div>{[<div></div>]}</div>),
+      ['<div>', '<div>', '</div>', '</div>'],
+    )
+  })
 })
 
 // Type-level tests:

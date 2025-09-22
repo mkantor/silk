@@ -41,7 +41,14 @@ export const createElement: (
   let stream: ReadableHTMLStream
 
   if (typeof tagNameOrFragmentFunction === 'function') {
-    stream = concatReadableStreams(children.map(escapeAsNeeded))
+    // This is a fragment.
+    stream = concatReadableStreams(
+      children.map(child =>
+        isReadonlyArray(child)
+          ? concatReadableStreams(child.map(escapeAsNeeded))
+          : escapeAsNeeded(child),
+      ),
+    )
   } else {
     const stringifiedAttributes =
       attributes === null ? '' : stringifyAttributes(attributes)
@@ -54,7 +61,11 @@ export const createElement: (
           ReadableStream.from([
             '<'.concat(tagNameOrFragmentFunction, stringifiedAttributes, '>'),
           ]),
-          ...children.map(escapeAsNeeded),
+          ...children.map(child =>
+            isReadonlyArray(child)
+              ? concatReadableStreams(child.map(escapeAsNeeded))
+              : escapeAsNeeded(child),
+          ),
           ReadableStream.from(['</'.concat(tagNameOrFragmentFunction, '>')]),
         ])
   }
@@ -71,7 +82,7 @@ type CreateElementParameters =
         attributes: AttributesByTagName[TagName] | null,
         ...children: TagName extends VoidElementTagName
           ? readonly []
-          : readonly PossiblyDeferredHTML[],
+          : readonly (PossiblyDeferredHTML | readonly PossiblyDeferredHTML[])[],
       ]
     }[keyof AttributesByTagName]
 
@@ -117,3 +128,6 @@ const elementAsReadableStream = (
       }
     },
   })
+
+const isReadonlyArray: (value: unknown) => value is readonly unknown[] =
+  Array.isArray
