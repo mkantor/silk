@@ -14,6 +14,12 @@ export type PossiblyDeferredHTML =
 
 export type ReadableHTMLStream = ReadableStream<string> & PossiblyTrusted
 
+/** The type of the `...children` rest parameter of `createElement`. */
+export type Children<TagName extends keyof AttributesByTagName> =
+  TagName extends VoidElementTagName
+    ? readonly []
+    : readonly (PossiblyDeferredHTML | readonly PossiblyDeferredHTML[])[]
+
 /**
  * Children where `child[trusted] === true` are considered safe to emit without
  * escaping.
@@ -80,9 +86,7 @@ type CreateElementParameters =
       [TagName in keyof AttributesByTagName]: readonly [
         tagName: TagName,
         attributes: AttributesByTagName[TagName] | null,
-        ...children: TagName extends VoidElementTagName
-          ? readonly []
-          : readonly (PossiblyDeferredHTML | readonly PossiblyDeferredHTML[])[],
+        ...children: Children<TagName>,
       ]
     }[keyof AttributesByTagName]
 
