@@ -1,5 +1,9 @@
 import { ReadableStream } from 'web-streams-polyfill'
-import { stringifyAttributes, type AttributesByTagName } from './attributes.js'
+import {
+  stringifyAttributes,
+  type AttributesByTagName,
+  type TagName,
+} from './attributes.js'
 import { makeHTMLEscapingTransformStream } from './escaping.js'
 import { concatReadableStreams } from './readableStream.js'
 import {
@@ -15,8 +19,8 @@ export type PossiblyDeferredHTML =
 export type ReadableHTMLStream = ReadableStream<string> & PossiblyTrusted
 
 /** The type of the `...children` rest parameter of `createElement`. */
-export type Children<TagName extends keyof AttributesByTagName> =
-  TagName extends VoidElementTagName
+export type Children<SpecificTagName extends TagName> =
+  SpecificTagName extends VoidElementTagName
     ? readonly []
     : readonly (PossiblyDeferredHTML | readonly PossiblyDeferredHTML[])[]
 
@@ -83,10 +87,10 @@ export const createElement: (
 
 type CreateElementParameters =
   | {
-      [TagName in keyof AttributesByTagName]: readonly [
-        tagName: TagName,
-        attributes: AttributesByTagName[TagName] | null,
-        ...children: Children<TagName>,
+      [SpecificTagName in TagName]: readonly [
+        tagName: SpecificTagName,
+        attributes: AttributesByTagName[SpecificTagName] | null,
+        ...children: Children<SpecificTagName>,
       ]
     }[keyof AttributesByTagName]
 
