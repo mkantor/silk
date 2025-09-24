@@ -1,16 +1,15 @@
 import type { AttributesByTagName } from './attributes.js'
-import type { PossiblyDeferredHTML } from './createElement.js'
-import type { VoidElementTagName } from './voidElements.js'
+import type { Children, ReadableHTMLStream } from './createElement.js'
 
 export { createElement } from './createElement.js'
 
 // See <https://www.typescriptlang.org/docs/handbook/jsx.html>.
 export declare namespace createElement.JSX {
+  // This type alias exists to improve type info for JSX tags.
   type HTML<TagName extends keyof AttributesByTagName> =
     AttributesByTagName[TagName] & {
-      readonly [_children]?: TagName extends VoidElementTagName
-        ? undefined
-        : Element | readonly Element[]
+      // This results in void elements having `never` for `_children`.
+      readonly [_children]?: Children<TagName>[number]
     }
 
   type IntrinsicElements = {
@@ -24,7 +23,7 @@ export declare namespace createElement.JSX {
   /** There are no function/class components, just intrinsic elements. */
   type ElementType = keyof IntrinsicElements
 
-  type Element = PossiblyDeferredHTML
+  type Element = ReadableHTMLStream
 
   type ElementClass = never
 }
