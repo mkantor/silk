@@ -1,5 +1,5 @@
 import type { AttributesByTagName } from './attributes.js'
-import type { Children, PossiblyDeferredHTML } from './createElement.js'
+import type { Children, ReadableHTMLStream } from './createElement.js'
 
 export { createElement } from './createElement.js'
 
@@ -23,7 +23,7 @@ export declare namespace createElement.JSX {
   /** There are no function/class components, just intrinsic elements. */
   type ElementType = keyof IntrinsicElements
 
-  type Element = PossiblyDeferredHTML
+  type Element = ReadableHTMLStream
 
   type ElementClass = never
 }
