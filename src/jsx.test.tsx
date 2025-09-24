@@ -29,13 +29,15 @@ suite('jsx', _ => {
 
   test('empty element', async _ =>
     assert.deepEqual(await arrayFromPossiblyDeferredHTML(<a></a>), [
-      '<a>',
+      '<a',
+      '>',
       '</a>',
     ]))
 
   test('element with text content', async _ =>
     assert.deepEqual(await arrayFromPossiblyDeferredHTML(<a>a</a>), [
-      '<a>',
+      '<a',
+      '>',
       'a',
       '</a>',
     ]))
@@ -51,7 +53,7 @@ suite('jsx', _ => {
           </a>
         </>,
       ),
-      ['<a>', 'a', '</a>'],
+      ['<a', '>', 'a', '</a>'],
     ))
 
   test('fragment with element and non-element children', async _ =>
@@ -61,19 +63,19 @@ suite('jsx', _ => {
           a<a>a</a>a
         </>,
       ),
-      ['a', '<a>', 'a', '</a>', 'a'],
+      ['a', '<a', '>', 'a', '</a>', 'a'],
     ))
 
   test('element with string attribute', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<a href="https://example.com">a</a>),
-      ['<a href="https://example.com">', 'a', '</a>'],
+      ['<a', ' href="https://example.com"', '>', 'a', '</a>'],
     ))
 
   test('element with newlines in content', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<div>{'\n\n\n\n\n'}</div>),
-      ['<div>', '\n\n\n\n\n', '</div>'],
+      ['<div', '>', '\n\n\n\n\n', '</div>'],
     ))
 
   test('element with element and non-element children', async _ =>
@@ -83,7 +85,7 @@ suite('jsx', _ => {
           a<div>b</div>c
         </div>,
       ),
-      ['<div>', 'a', '<div>', 'b', '</div>', 'c', '</div>'],
+      ['<div', '>', 'a', '<div', '>', 'b', '</div>', 'c', '</div>'],
     ))
 
   test('element with multiple separate text children', async _ =>
@@ -93,20 +95,20 @@ suite('jsx', _ => {
           {'a'}b{'c'}
         </div>,
       ),
-      ['<div>', 'a', 'b', 'c', '</div>'],
+      ['<div', '>', 'a', 'b', 'c', '</div>'],
     ))
 
   test('element with style attribute', async _ => {
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<div style="color: red"></div>),
-      ['<div style="color: red">', '</div>'],
+      ['<div', ' style="color: red"', '>', '</div>'],
     )
   })
 
   test('element with event handler attribute', async _ => {
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<div onclick="alert('hi')"></div>),
-      ['<div onclick="alert(&apos;hi&apos;)">', '</div>'],
+      ['<div', ' onclick="alert(&apos;hi&apos;)"', '>', '</div>'],
     )
   })
 
@@ -119,12 +121,13 @@ suite('jsx', _ => {
           <br></br>
         </>,
       ),
-      ['<br>', '<br>'],
+      ['<br', '>', '<br', '>'],
     ))
 
   test('self-closing non-void element', async _ =>
     assert.deepEqual(await arrayFromPossiblyDeferredHTML(<div />), [
-      '<div>',
+      '<div',
+      '>',
       '</div>',
     ]))
 
@@ -134,19 +137,22 @@ suite('jsx', _ => {
         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" />,
       ),
       [
-        '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==">',
+        '<img',
+        ' src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="',
+        '>',
       ],
     ))
 
   test('void element with escaped attribute', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<img title='hello"world' />),
-      ['<img title="hello&quot;world">'],
+      ['<img', ' title="hello&quot;world"', '>'],
     ))
 
   test('element with escaped text content', async _ =>
     assert.deepEqual(await arrayFromPossiblyDeferredHTML(<div>{'<&>'}</div>), [
-      '<div>',
+      '<div',
+      '>',
       '&lt;&amp;&gt;',
       '</div>',
     ]))
@@ -154,39 +160,41 @@ suite('jsx', _ => {
   test('element with boolean attribute', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<video autoplay></video>),
-      ['<video autoplay>', '</video>'],
+      ['<video', ' autoplay', '>', '</video>'],
     ))
 
   test('false boolean attribute', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<video autoplay={false}></video>),
-      ['<video>', '</video>'],
+      ['<video', '>', '</video>'],
     ))
 
   test('true boolean attribute', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<video autoplay={true}></video>),
-      ['<video autoplay>', '</video>'],
+      ['<video', ' autoplay', '>', '</video>'],
     ))
 
   test('invalid attribute name', async _ =>
-    assert.throws(() => <div {...{ ['invalid attribute name']: true }}></div>))
+    assert.rejects(async () => {
+      for await (const _chunk of (
+        <div {...{ ['invalid attribute name']: true }}></div>
+      )) {
+      }
+    }))
 
   test('invalid attribute value', async _ =>
-    assert.throws(() => <div {...{ 'invalid-value': 42 }}></div>))
-
-  test('promise content', async _ =>
-    assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<div>{Promise.resolve('<&>')}</div>),
-      ['<div>', '&lt;&amp;&gt;', '</div>'],
-    ))
+    assert.rejects(async () => {
+      for await (const _chunk of (<div {...{ ['invalid-value']: 42 }}></div>)) {
+      }
+    }))
 
   test('stream content', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(
         <div>{ReadableStream.from(['<&>'])}</div>,
       ),
-      ['<div>', '&lt;&amp;&gt;', '</div>'],
+      ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))
 
   test('trusted promise content', async _ => {
@@ -196,7 +204,8 @@ suite('jsx', _ => {
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<div>{trustedPromise}</div>),
       [
-        '<div>',
+        '<div',
+        '>',
         '<marquee>🕴</marquee>', // No escaping.
         '</div>',
       ],
@@ -211,7 +220,8 @@ suite('jsx', _ => {
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<div>{trustedStream}</div>),
       [
-        '<div>',
+        '<div',
+        '>',
         '<marquee>🕴</marquee>', // No escaping.
         '</div>',
       ],
@@ -221,7 +231,7 @@ suite('jsx', _ => {
   test('array children', async _ => {
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(<div>{[<div></div>]}</div>),
-      ['<div>', '<div>', '</div>', '</div>'],
+      ['<div', '>', '<div', '>', '</div>', '</div>'],
     )
   })
 })
@@ -257,6 +267,21 @@ try {
 
   // @ts-expect-error
   ;<a nonexistentattribute="value"></a>
+
+  // @ts-expect-error
+  ;<video autoplay="not a boolean"></video>
+
+  // @ts-expect-error
+  ;<a nonexistentattribute="value"></a>
+
+  // @ts-expect-error
+  ;<div role="some arbitrary string"></div>
+
+  // @ts-expect-error
+  ;<div role={Promise.resolve('some arbitrary string')}></div>
+
+  // Promises resolving to union types of valid literals should be valid.
+  ;<div role={Promise.resolve(Math.random() > 0.5 ? 'alert' : 'text')}></div>
 
   // Unfortunately hyphenated attributes are special-cased by TypeScript (see
   // <https://github.com/microsoft/TypeScript/issues/32447>), so this is not a

@@ -1,7 +1,7 @@
 import { ReadableStream } from 'web-streams-polyfill'
 import {
-  stringifyAttributes,
-  type AttributesByTagName,
+  stringifyPossiblyDeferredAttributes,
+  type PossiblyDeferredAttributesByTagName,
   type TagName,
 } from './attributes.js'
 import { makeHTMLEscapingTransformStream } from './escaping.js'
@@ -55,17 +55,16 @@ export const createElement: (
       ),
     )
   } else {
-    const stringifiedAttributes =
-      attributes === null ? '' : stringifyAttributes(attributes)
+    const openingTag = concatReadableStreams([
+      ReadableStream.from(['<'.concat(tagNameOrFragmentFunction)]),
+      stringifyPossiblyDeferredAttributes(attributes ?? {}),
+      ReadableStream.from(['>']),
+    ])
 
     stream = isVoidElementTagName(tagNameOrFragmentFunction)
-      ? ReadableStream.from([
-          '<'.concat(tagNameOrFragmentFunction, stringifiedAttributes, '>'),
-        ])
+      ? openingTag
       : concatReadableStreams([
-          ReadableStream.from([
-            '<'.concat(tagNameOrFragmentFunction, stringifiedAttributes, '>'),
-          ]),
+          openingTag,
           ...children.map(child =>
             isReadonlyArray(child)
               ? concatReadableStreams(child.map(escapeAsNeeded))
@@ -84,10 +83,10 @@ type CreateElementParameters =
   | {
       [SpecificTagName in TagName]: readonly [
         tagName: SpecificTagName,
-        attributes: AttributesByTagName[SpecificTagName] | null,
+        attributes: PossiblyDeferredAttributesByTagName[SpecificTagName] | null,
         ...children: Children<SpecificTagName>,
       ]
-    }[keyof AttributesByTagName]
+    }[TagName]
 
 type CreateFragmentParameters = readonly [
   // With standard configuration this will be `createElement` itself.
@@ -116,12 +115,15 @@ const elementAsReadableStream = (
     start: async controller => {
       try {
         const awaitedElement = await element
-        if (typeof awaitedElement === 'string') {
-          controller.enqueue(awaitedElement)
-        } else {
+        if (
+          typeof awaitedElement === 'object' &&
+          Symbol.asyncIterator in awaitedElement
+        ) {
           for await (const value of awaitedElement) {
             controller.enqueue(value)
           }
+        } else {
+          controller.enqueue(awaitedElement)
         }
         controller.close()
       } catch (error) {

@@ -21,13 +21,13 @@ suite('createElement', _ => {
   test('empty element', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(createElement('a', {})),
-      ['<a>', '</a>'],
+      ['<a', '>', '</a>'],
     ))
 
   test('element with text content', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(createElement('a', {}, 'a')),
-      ['<a>', 'a', '</a>'],
+      ['<a', '>', 'a', '</a>'],
     ))
 
   test('element with string attribute', async _ =>
@@ -35,7 +35,7 @@ suite('createElement', _ => {
       await arrayFromPossiblyDeferredHTML(
         createElement('a', { href: 'https://example.com' }, 'a'),
       ),
-      ['<a href="https://example.com">', 'a', '</a>'],
+      ['<a', ' href="https://example.com"', '>', 'a', '</a>'],
     ))
 
   test('element with element and non-element children', async _ =>
@@ -43,7 +43,7 @@ suite('createElement', _ => {
       await arrayFromPossiblyDeferredHTML(
         createElement('div', {}, 'a', createElement('div', {}, 'b'), 'c'),
       ),
-      ['<div>', 'a', '<div>', 'b', '</div>', 'c', '</div>'],
+      ['<div', '>', 'a', '<div', '>', 'b', '</div>', 'c', '</div>'],
     ))
 
   test('element with multiple separate text children', async _ =>
@@ -51,13 +51,13 @@ suite('createElement', _ => {
       await arrayFromPossiblyDeferredHTML(
         createElement('div', {}, 'a', 'b', 'c'),
       ),
-      ['<div>', 'a', 'b', 'c', '</div>'],
+      ['<div', '>', 'a', 'b', 'c', '</div>'],
     ))
 
   test('void elements', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(createElement('br', {})),
-      ['<br>'],
+      ['<br', '>'],
     ))
 
   test('void element with attribute', async _ =>
@@ -68,7 +68,9 @@ suite('createElement', _ => {
         }),
       ),
       [
-        '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==">',
+        '<img',
+        ' src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="',
+        '>',
       ],
     ))
 
@@ -79,13 +81,13 @@ suite('createElement', _ => {
           title: 'hello"world',
         }),
       ),
-      ['<img title="hello&quot;world">'],
+      ['<img', ' title="hello&quot;world"', '>'],
     ))
 
   test('element with escaped text content', async _ =>
     assert.deepEqual(
       await arrayFromPossiblyDeferredHTML(createElement('div', {}, '<&>')),
-      ['<div>', '&lt;&amp;&gt;', '</div>'],
+      ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))
 
   test('false boolean attribute', async _ =>
@@ -93,7 +95,7 @@ suite('createElement', _ => {
       await arrayFromPossiblyDeferredHTML(
         createElement('video', { autoplay: false }),
       ),
-      ['<video>', '</video>'],
+      ['<video', '>', '</video>'],
     ))
 
   test('true boolean attribute', async _ =>
@@ -101,7 +103,7 @@ suite('createElement', _ => {
       await arrayFromPossiblyDeferredHTML(
         createElement('video', { autoplay: true }),
       ),
-      ['<video autoplay>', '</video>'],
+      ['<video', ' autoplay', '>', '</video>'],
     ))
 
   test('promise content', async _ =>
@@ -109,7 +111,7 @@ suite('createElement', _ => {
       await arrayFromPossiblyDeferredHTML(
         createElement('div', {}, Promise.resolve('<&>')),
       ),
-      ['<div>', '&lt;&amp;&gt;', '</div>'],
+      ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))
 
   test('stream content', async _ =>
@@ -117,7 +119,7 @@ suite('createElement', _ => {
       await arrayFromPossiblyDeferredHTML(
         createElement('div', {}, ReadableStream.from(['<&>'])),
       ),
-      ['<div>', '&lt;&amp;&gt;', '</div>'],
+      ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))
 
   test('trusted promise content', async _ => {
@@ -129,7 +131,8 @@ suite('createElement', _ => {
         createElement('div', {}, trustedPromise),
       ),
       [
-        '<div>',
+        '<div',
+        '>',
         '<marquee>🕴</marquee>', // No escaping.
         '</div>',
       ],
@@ -146,20 +149,13 @@ suite('createElement', _ => {
         createElement('div', {}, trustedStream),
       ),
       [
-        '<div>',
+        '<div',
+        '>',
         '<marquee>🕴</marquee>', // No escaping.
         '</div>',
       ],
     )
   })
-
-  test('createElement', async _ =>
-    assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
-        createElement('div', { class: 'a' }, 'b'),
-      ),
-      ['<div class="a">', 'b', '</div>'],
-    ))
 })
 
 // Type-level tests:
