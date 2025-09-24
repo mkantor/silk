@@ -3,10 +3,10 @@ import test, { suite } from 'node:test'
 import { ReadableStream } from 'web-streams-polyfill'
 import {
   createElement,
-  trusted,
   type PossiblyDeferredHTML,
   type ReadableHTMLStream,
 } from './createElement.js'
+import { trusted } from './trust.js'
 
 // TODO: Switch to `Array.fromAsync`.
 const arrayFromPossiblyDeferredHTML = async (source: PossiblyDeferredHTML) => {

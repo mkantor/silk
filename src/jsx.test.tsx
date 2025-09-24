@@ -2,11 +2,11 @@ import assert from 'node:assert'
 import test, { suite } from 'node:test'
 import { ReadableStream } from 'web-streams-polyfill'
 import {
-  trusted,
   type PossiblyDeferredHTML,
   type ReadableHTMLStream,
 } from './createElement.js'
 import { createElement } from './jsx.js'
+import { trusted } from './trust.js'
 
 // TODO: Switch to `Array.fromAsync`.
 const arrayFromPossiblyDeferredHTML = async (source: PossiblyDeferredHTML) => {

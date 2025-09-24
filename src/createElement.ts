@@ -6,6 +6,7 @@ import {
 } from './attributes.js'
 import { makeHTMLEscapingTransformStream } from './escaping.js'
 import { concatReadableStreams } from './readableStream.js'
+import { trusted, type PossiblyTrusted } from './trust.js'
 import {
   isVoidElementTagName,
   type VoidElementTagName,
@@ -23,12 +24,6 @@ export type Children<SpecificTagName extends TagName> =
   SpecificTagName extends VoidElementTagName
     ? readonly []
     : readonly (PossiblyDeferredHTML | readonly PossiblyDeferredHTML[])[]
-
-/**
- * Children where `child[trusted] === true` are considered safe to emit without
- * escaping.
- */
-export const trusted = Symbol('trusted')
 
 /**
  * Creates an HTML element from the given tag name, attributes, and children,
@@ -100,8 +95,6 @@ type CreateFragmentParameters = readonly [
   attributes: null,
   ...children: readonly PossiblyDeferredHTML[],
 ]
-
-type PossiblyTrusted = { [trusted]?: true }
 
 const escapeAsNeeded = (element: PossiblyDeferredHTML): ReadableHTMLStream => {
   const stream = elementAsReadableStream(element)
