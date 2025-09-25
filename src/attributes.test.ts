@@ -1,67 +1,49 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
-import {
-  stringifyAttributeOrThrow,
-  stringifyPossiblyDeferredAttributes,
-} from './attributes.js'
-import { asArrayOfHTMLFragments } from './testUtilities.test.js'
-import { trusted, type PossiblyTrusted, type Trusted } from './trust.js'
+import { possiblyDeferredAttributesToHTMLTokenStream } from './attributes.js'
+import { arrayFromAsync } from './testUtilities.test.js'
 
 suite('attributes', _ => {
-  test('basic attribute', _ =>
+  test('basic attributes', async _ =>
     assert.deepEqual(
-      stringifyAttributeOrThrow('class', 'a', {
-        trusted: false,
-      }),
-      ' class="a"',
-    ))
-
-  test('attribute with escaping', _ =>
-    assert.deepEqual(
-      stringifyAttributeOrThrow('href', 'https://example.com?a=1&b=2', {
-        trusted: false,
-      }),
-      ' href="https://example.com?a=1&amp;b=2"',
-    ))
-
-  test('trusted attribute', _ =>
-    assert.deepEqual(
-      stringifyAttributeOrThrow('href', 'https://example.com?a=1&amp;b=2', {
-        trusted: true,
-      }),
-      ' href="https://example.com?a=1&amp;b=2"',
-    ))
-
-  test('invalid attribute value', _ => {
-    assert.throws(() =>
-      stringifyAttributeOrThrow('oops', 42, { trusted: false }),
-    )
-    assert.throws(() =>
-      stringifyAttributeOrThrow('oops', 42, { trusted: true }),
-    )
-  })
-
-  test('invalid attribute name', _ => {
-    assert.throws(() =>
-      stringifyAttributeOrThrow('invalid attribute', '', {
-        trusted: false,
-      }),
-    )
-    assert.throws(() =>
-      stringifyAttributeOrThrow('invalid attribute', '', {
-        trusted: true,
-      }),
-    )
-  })
-
-  test('possibly-deferred attributes', async _ =>
-    assert.deepEqual(
-      await asArrayOfHTMLFragments(
-        stringifyPossiblyDeferredAttributes({
+      await arrayFromAsync(
+        possiblyDeferredAttributesToHTMLTokenStream({
           id: 'a',
           title: 'Calvin & Hobbes',
-          autofocus: true,
-          allowfullscreen: false,
+          autoplay: true,
+          autofocus: false,
+        }),
+      ),
+      [
+        { kind: 'attribute', name: 'id', value: 'a' },
+        // Note that no escaping happens yet. That's during serialization.
+        { kind: 'attribute', name: 'title', value: 'Calvin & Hobbes' },
+        { kind: 'attribute', name: 'autoplay', value: '' },
+      ],
+    ))
+
+  test('invalid attribute value', _ =>
+    assert.rejects(async () => {
+      const invalidAttributes: {} = { oops: 42 }
+      for await (const _chunk of possiblyDeferredAttributesToHTMLTokenStream(
+        invalidAttributes,
+      )) {
+      }
+    }))
+
+  test('invalid attribute name', _ =>
+    assert.rejects(async () => {
+      const invalidAttributes: {} = { ['invalid attribute']: '' }
+      for await (const _chunk of possiblyDeferredAttributesToHTMLTokenStream(
+        invalidAttributes,
+      )) {
+      }
+    }))
+
+  test('deferred attributes', async _ =>
+    assert.deepEqual(
+      await arrayFromAsync(
+        possiblyDeferredAttributesToHTMLTokenStream({
           autoplay: Promise.resolve(true),
           checked: Promise.resolve(false),
           href: Promise.resolve('https://example.com?a=1&b=2'),
@@ -70,52 +52,14 @@ suite('attributes', _ => {
         }),
       ),
       [
-        ' id="a"',
-        ' title="Calvin &amp; Hobbes"',
-        ' autofocus',
-        ' autoplay',
-        ' href="https://example.com?a=1&amp;b=2"',
-        ' class="a b c"',
-        ' name="a&amp;b"',
+        { kind: 'attribute', name: 'autoplay', value: '' },
+        {
+          kind: 'attribute',
+          name: 'href',
+          value: 'https://example.com?a=1&b=2',
+        },
+        { kind: 'attribute', name: 'class', value: 'a b c' },
+        { kind: 'attribute', name: 'name', value: 'a&b' },
       ],
     ))
-
-  test('trusted deferred attributes', async _ => {
-    const trust: <A extends object>(
-      value: A,
-    ) => asserts value is A & Trusted = value => {
-      const possiblyTrustedValue: object & PossiblyTrusted = value
-      possiblyTrustedValue[trusted] = true
-    }
-
-    // Trusting `Promise<boolean>`s does nothing, but should be allowed.
-    const trustedPromiseOfTrue = Promise.resolve(true)
-    trust(trustedPromiseOfTrue)
-    const trustedPromiseOfFalse = Promise.resolve(false)
-    trust(trustedPromiseOfFalse)
-
-    const trustedPromiseOfString = Promise.resolve(
-      'https://example.com?a=1&amp;b=2',
-    )
-    trust(trustedPromiseOfString)
-
-    const trustedStream = ReadableStream.from(['a', '&amp;', 'b'])
-    trust(trustedStream)
-
-    assert.deepEqual(
-      await asArrayOfHTMLFragments(
-        stringifyPossiblyDeferredAttributes({
-          autofocus: trustedPromiseOfTrue,
-          allowfullscreen: trustedPromiseOfFalse,
-          href: trustedPromiseOfString,
-          name: trustedStream,
-        }),
-      ),
-      [
-        ' autofocus',
-        ' href="https://example.com?a=1&amp;b=2"',
-        ' name="a&amp;b"',
-      ],
-    )
-  })
 })

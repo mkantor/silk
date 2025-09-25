@@ -1,2 +1,6 @@
 export { createElement } from './jsx.js'
-export { trusted, type PossiblyTrusted } from './trust.js'
+export {
+  HTMLSerializingTransformStream,
+  type SerializedHTMLFragment,
+} from './transformStreams.js'
+export { isVoidElementTagName } from './voidElements.js'

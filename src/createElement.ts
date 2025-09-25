@@ -1,18 +1,15 @@
 import { ReadableStream } from 'web-streams-polyfill'
 import {
-  stringifyPossiblyDeferredAttributes,
+  possiblyDeferredAttributesToHTMLTokenStream,
   type PossiblyDeferredAttributesByTagName,
 } from './attributes.js'
-import { makeHTMLEscapingTransformStream } from './escaping.js'
+import type { HTMLToken } from './htmlToken.js'
 import { concatReadableStreams } from './readableStream.js'
 import type { TagName } from './tagName.js'
-import { trusted, type PossiblyTrusted } from './trust.js'
-import {
-  isVoidElementTagName,
-  type VoidElementTagName,
-} from './voidElements.js'
+import { TextCapturingTransformStream } from './transformStreams.js'
+import type { VoidElementTagName } from './voidElements.js'
 
-export type ReadableHTMLStream = ReadableStream<string> & PossiblyTrusted
+export type ReadableHTMLTokenStream = ReadableStream<HTMLToken>
 
 /** The type of the `...children` rest parameter of `createElement`. */
 export type Children<SpecificTagName extends TagName> =
@@ -24,13 +21,10 @@ export type Children<SpecificTagName extends TagName> =
  * Creates an HTML element from the given tag name, attributes, and children,
  * returning a `ReadableStream`. Children may be supplied asynchronously as
  * `Promise`s and/or async iterables.
- *
- * Attribute values and content are escaped via HTML entity encoding, except for
- * children with a `trusted` symbol property set to `true`.
  */
 export const createElement: (
   ...[tagName, attributes, ...children]: CreateElementParameters
-) => ReadableHTMLStream = (
+) => ReadableHTMLTokenStream = (
   // This function gets called for fragments too. Direct callers of
   // `createElement` shouldn't have to see the function parameter, so the
   // externally-visible type above excludes `CreateFragmentParameters`.
@@ -38,40 +32,30 @@ export const createElement: (
     | CreateElementParameters
     | CreateFragmentParameters
 ) => {
-  let stream: ReadableHTMLStream
+  const childrenAsStreams = children.map(child =>
+    isReadonlyArray(child)
+      ? concatReadableStreams(child.map(childToReadableHTMLTokenStream))
+      : childToReadableHTMLTokenStream(child),
+  )
 
-  if (typeof tagNameOrFragmentFunction === 'function') {
-    // This is a fragment.
-    stream = concatReadableStreams(
-      children.map(child =>
-        isReadonlyArray(child)
-          ? concatReadableStreams(child.map(escapeAsNeeded))
-          : escapeAsNeeded(child),
-      ),
-    )
-  } else {
-    const openingTag = concatReadableStreams([
-      ReadableStream.from(['<'.concat(tagNameOrFragmentFunction)]),
-      stringifyPossiblyDeferredAttributes(attributes ?? {}),
-      ReadableStream.from(['>']),
-    ])
+  const streamComponents =
+    typeof tagNameOrFragmentFunction === 'function'
+      ? // This is a fragment.
+        childrenAsStreams
+      : // This is an intrinsic element.
+        ([
+          ReadableStream.from([
+            { kind: 'startOfOpeningTag', tagName: tagNameOrFragmentFunction },
+          ]),
+          possiblyDeferredAttributesToHTMLTokenStream(attributes ?? {}),
+          ReadableStream.from([{ kind: 'endOfOpeningTag' }]),
 
-    stream = isVoidElementTagName(tagNameOrFragmentFunction)
-      ? openingTag
-      : concatReadableStreams([
-          openingTag,
-          ...children.map(child =>
-            isReadonlyArray(child)
-              ? concatReadableStreams(child.map(escapeAsNeeded))
-              : escapeAsNeeded(child),
-          ),
-          ReadableStream.from(['</'.concat(tagNameOrFragmentFunction, '>')]),
-        ])
-  }
+          ...childrenAsStreams,
 
-  stream[trusted] = true // Escaping has occurred.
+          ReadableStream.from([{ kind: 'closingTag' }]),
+        ] satisfies readonly ReadableHTMLTokenStream[])
 
-  return stream
+  return concatReadableStreams(streamComponents)
 }
 
 type CreateElementParameters =
@@ -92,21 +76,13 @@ type CreateFragmentParameters = readonly [
 
 type Child =
   | string
-  | (Promise<string> & PossiblyTrusted)
-  | (AsyncIterable<string> & PossiblyTrusted)
+  | Promise<string>
+  | AsyncIterable<string>
+  | AsyncIterable<HTMLToken>
 
-const escapeAsNeeded = (child: Child): ReadableHTMLStream => {
-  const stream = childAsReadableStream(child)
-
-  const childIsTrusted =
-    typeof child === 'object' && trusted in child && child[trusted] === true
-
-  return childIsTrusted
-    ? stream
-    : stream.pipeThrough(makeHTMLEscapingTransformStream())
-}
-
-const childAsReadableStream = (child: Child): ReadableHTMLStream =>
+const childToReadableHTMLTokenStream = (
+  child: Child,
+): ReadableHTMLTokenStream =>
   new ReadableStream({
     start: async controller => {
       try {
@@ -126,7 +102,7 @@ const childAsReadableStream = (child: Child): ReadableHTMLStream =>
         controller.error(error)
       }
     },
-  })
+  }).pipeThrough(new TextCapturingTransformStream())
 
 const isReadonlyArray: (value: unknown) => value is readonly unknown[] =
   Array.isArray

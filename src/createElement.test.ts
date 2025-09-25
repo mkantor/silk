@@ -1,9 +1,8 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
 import { ReadableStream } from 'web-streams-polyfill'
-import { createElement, type ReadableHTMLStream } from './createElement.js'
+import { createElement } from './createElement.js'
 import { asArrayOfHTMLFragments } from './testUtilities.test.js'
-import { trusted } from './trust.js'
 
 suite('createElement', _ => {
   test('empty element', async _ =>
@@ -104,37 +103,6 @@ suite('createElement', _ => {
       ),
       ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))
-
-  test('trusted promise content', async _ => {
-    const trustedPromise: Promise<string> & { [trusted]?: true } =
-      Promise.resolve('<marquee>🕴</marquee>')
-    trustedPromise[trusted] = true
-    assert.deepEqual(
-      await asArrayOfHTMLFragments(createElement('div', {}, trustedPromise)),
-      [
-        '<div',
-        '>',
-        '<marquee>🕴</marquee>', // No escaping.
-        '</div>',
-      ],
-    )
-  })
-
-  test('trusted stream content', async _ => {
-    const trustedStream: ReadableHTMLStream = ReadableStream.from([
-      '<marquee>🕴</marquee>',
-    ])
-    trustedStream[trusted] = true
-    assert.deepEqual(
-      await asArrayOfHTMLFragments(createElement('div', {}, trustedStream)),
-      [
-        '<div',
-        '>',
-        '<marquee>🕴</marquee>', // No escaping.
-        '</div>',
-      ],
-    )
-  })
 })
 
 // Type-level tests:

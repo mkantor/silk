@@ -1,41 +1,29 @@
 import type { CSSProperties, HTMLElements, ValueSets } from '@michijs/htmltype'
 import { ReadableStream } from 'web-streams-polyfill'
-import { escapeHTMLContent } from './escaping.js'
-import type { TagName } from './tagName.js'
-import { trusted, type PossiblyTrusted } from './trust.js'
+import type { HTMLToken } from './htmlToken.js'
 
 /**
- * Attribute values are specifically-typed based on the tag and attribute
- * name. Depending on the attribute, the value must ultimately be either a
- * string or a boolean. Attribute values may be deferred via `Promise`s and
- * async iterables.
+ * Attribute values are specifically-typed based on the tag and attribute name.
+ * Depending on the attribute, the value must ultimately be either a string or a
+ * boolean. Attribute values may be deferred via `Promise`s and async iterables.
  */
 export type PossiblyDeferredAttributesByTagName = {
-  readonly [SpecificTagName in TagName]: {
+  readonly [SpecificTagName in keyof HTMLElements<{}>]: {
     readonly [AttributeName in keyof HTMLElements<{}>[SpecificTagName]]: AllowAttributeValueDeferment<
       FixUpAttributeValue<HTMLElements<{}>[SpecificTagName][AttributeName]>
     >
   }
 }
 
-/**
- * Returns a stream of HTML-encoded attributes with a leading space. Escapes
- * untrusted attribute values.
- */
-export const stringifyPossiblyDeferredAttributes = (
+export const possiblyDeferredAttributesToHTMLTokenStream = (
   attributes: UnknownPossiblyDeferredAttributes,
-): ReadableStream<string> =>
+): ReadableStream<AttributeHTMLToken> =>
   new ReadableStream({
     start: async controller => {
       for (const [attributeName, attributeValue] of Object.entries(
         attributes,
       )) {
         try {
-          const attributeValueIsTrusted =
-            typeof attributeValue === 'object' &&
-            trusted in attributeValue &&
-            attributeValue[trusted] === true
-
           const awaitedAttributeValue = await attributeValue
           if (
             typeof awaitedAttributeValue === 'object' &&
@@ -48,20 +36,15 @@ export const stringifyPossiblyDeferredAttributes = (
                 bufferedAttributeValue.concat(attributeValue)
             }
             controller.enqueue(
-              stringifyAttributeOrThrow(attributeName, bufferedAttributeValue, {
-                trusted: attributeValueIsTrusted,
-              }),
+              makeStringAttributeOrThrow(attributeName, bufferedAttributeValue),
             )
           } else if (awaitedAttributeValue !== undefined) {
-            const stringifiedAttribute = stringifyAttributeOrThrow(
+            const token = makeAttributeHTMLTokenOrThrow(
               attributeName,
               awaitedAttributeValue,
-              {
-                trusted: attributeValueIsTrusted,
-              },
             )
-            if (stringifiedAttribute !== '') {
-              controller.enqueue(stringifiedAttribute)
+            if (token !== undefined) {
+              controller.enqueue(token)
             }
           }
         } catch (error) {
@@ -73,47 +56,7 @@ export const stringifyPossiblyDeferredAttributes = (
     },
   })
 
-/**
- * Returns an HTML-encoded attribute name/value pair with a leading space.
- * Escapes attribute values unless `trusted` is true. For example:
- * ```ts
- * stringifyAttributeOrThrow('href', 'https://example.com?a=1&b=2', { trusted: false })
- * // => ' href="https://example.com?a=1&amp;b=2"'
- * stringifyAttributeOrThrow('href', 'https://example.com?a=1&amp;b=2', { trusted: true })
- * // => ' href="https://example.com?a=1&amp;b=2"'
- * ```
- */
-export const stringifyAttributeOrThrow = (
-  attributeName: string,
-  attributeValue: Primitive,
-  { trusted }: { readonly trusted: boolean },
-): string => {
-  const escapeUnlessTrusted = trusted
-    ? (content: string) => content
-    : escapeHTMLContent
-
-  if (!isLegalAttributeName(attributeName)) {
-    throw new Error(
-      `Attribute name \`${attributeName}\` contains one or more invalid characters`,
-    )
-  } else if (typeof attributeValue === 'string') {
-    return ' '.concat(
-      escapeUnlessTrusted(attributeName),
-      '="',
-      escapeUnlessTrusted(attributeValue),
-      '"',
-    )
-  } else if (attributeValue === true) {
-    // Boolean attributes do not require a value.
-    return ' '.concat(escapeUnlessTrusted(attributeName))
-  } else if (attributeValue === false || attributeValue === undefined) {
-    return ''
-  } else {
-    throw new Error(
-      `Attribute value for \`${attributeName}\` has invalid type (${typeof attributeValue})`,
-    )
-  }
-}
+type AttributeHTMLToken = Extract<HTMLToken, { kind: 'attribute' }>
 
 type FixUpAttributeValue<AttributeValue> =
   // @michijs/htmltype allows `string | number | boolean | null` for many
@@ -134,9 +77,7 @@ type AllowAttributeValueDeferment<AttributeValue> =
   // If it's a string, allow deferment by wrapping in a `Promise` or by using an
   // async iterable of substrings.
   | ([AttributeValue] extends [string]
-      ?
-          | (Promise<AttributeValue> & PossiblyTrusted)
-          | (AsyncIterable<string> & PossiblyTrusted)
+      ? Promise<AttributeValue> | AsyncIterable<string>
       : // If it's boolean, allow deferment wrapping in a `Promise` (an iterable
       // doesn't make sense; a boolean is just a single value).
       [AttributeValue] extends [boolean]
@@ -148,11 +89,75 @@ type UnknownPossiblyDeferredAttributes = {
     | string
     | boolean
     | Promise<boolean>
-    | (Promise<string> & PossiblyTrusted)
-    | (AsyncIterable<string> & PossiblyTrusted)
+    | Promise<string>
+    | AsyncIterable<string>
 }
 
 type Primitive = string | number | bigint | boolean | symbol | null | undefined
+
+/**
+ * Throws an error if the attribute name is malformed or if the value has an
+ * invalid type.
+ */
+const makeAttributeHTMLTokenOrThrow = (
+  attributeName: string,
+  attributeValue: Primitive,
+): AttributeHTMLToken | undefined => {
+  if (typeof attributeValue === 'string') {
+    return makeStringAttributeOrThrow(attributeName, attributeValue)
+  } else if (
+    typeof attributeValue === 'boolean' ||
+    attributeValue === undefined
+  ) {
+    return makeBooleanOrUndefinedAttributeOrThrow(attributeName, attributeValue)
+  } else {
+    throw new Error(
+      `Attribute value for \`${attributeName}\` has invalid type (${typeof attributeValue})`,
+    )
+  }
+}
+
+const makeStringAttributeOrThrow = (
+  attributeName: string,
+  attributeValue: string,
+): AttributeHTMLToken => {
+  assertValidAttributeName(attributeName)
+  return {
+    kind: 'attribute',
+    name: attributeName,
+    value: attributeValue,
+  }
+}
+
+const makeBooleanOrUndefinedAttributeOrThrow = (
+  attributeName: string,
+  attributeValue: boolean | undefined,
+): AttributeHTMLToken | undefined => {
+  assertValidAttributeName(attributeName)
+  if (attributeValue === true) {
+    // [The HTML
+    // specification](https://html.spec.whatwg.org/multipage/syntax.html#attributes-2)
+    // says this about boolean attributes:
+    // > If the attribute is present, its value must either be the empty string
+    // > or a value that is an ASCII case-insensitive match for the attribute's
+    // > canonical name, with no leading or trailing whitespace.
+    return {
+      kind: 'attribute',
+      name: attributeName,
+      value: '',
+    }
+  } else {
+    return undefined
+  }
+}
+
+const assertValidAttributeName = (attributeName: string) => {
+  if (!isLegalAttributeName(attributeName)) {
+    throw new Error(
+      `Attribute name \`${attributeName}\` contains one or more invalid characters`,
+    )
+  }
+}
 
 const isLegalAttributeName = (attributeName: string): boolean =>
   !controlPattern.test(attributeName) &&
@@ -168,9 +173,8 @@ const isLegalAttributeName = (attributeName: string): boolean =>
 const specialCharacterPattern = /[ "'>/=]/
 
 // A control is a C0 control or a code point in the range U+007F DELETE to
-// U+009F APPLICATION PROGRAM COMMAND, inclusive.
-// A C0 control is a code point in the range U+0000 NULL to U+001F INFORMATION
-// SEPARATOR ONE, inclusive.
+// U+009F APPLICATION PROGRAM COMMAND, inclusive. A C0 control is a code point
+// in the range U+0000 NULL to U+001F INFORMATION SEPARATOR ONE, inclusive.
 const controlPattern = /[\u0000-\u001F\u007F-\u009F]/
 
 // A noncharacter is a code point that is in the range U+FDD0 to U+FDEF,
