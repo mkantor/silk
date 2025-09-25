@@ -1,6 +1,7 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
 import { possiblyDeferredAttributesToHTMLTokenStream } from './attributes.js'
+import { readableStreamFromIterable } from './readableStream.js'
 import { arrayFromAsync } from './testUtilities.test.js'
 
 suite('attributes', _ => {
@@ -47,8 +48,8 @@ suite('attributes', _ => {
           autoplay: Promise.resolve(true),
           checked: Promise.resolve(false),
           href: Promise.resolve('https://example.com?a=1&b=2'),
-          class: ReadableStream.from(['a', ' b', ' c']),
-          name: ReadableStream.from(['a', '&', 'b']),
+          class: readableStreamFromIterable(['a', ' b', ' c']),
+          name: readableStreamFromIterable(['a', '&', 'b']),
         }),
       ),
       [

@@ -1,5 +1,4 @@
 import type { CSSProperties, HTMLElements, ValueSets } from '@michijs/htmltype'
-import { ReadableStream } from 'web-streams-polyfill'
 import type { HTMLToken } from './htmlToken.js'
 
 /**

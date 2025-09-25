@@ -1,10 +1,12 @@
-import { ReadableStream } from 'web-streams-polyfill'
 import {
   possiblyDeferredAttributesToHTMLTokenStream,
   type PossiblyDeferredAttributesByTagName,
 } from './attributes.js'
 import type { HTMLToken } from './htmlToken.js'
-import { concatReadableStreams } from './readableStream.js'
+import {
+  concatReadableStreams,
+  readableStreamFromChunk,
+} from './readableStream.js'
 import type { TagName } from './tagName.js'
 import { TextCapturingTransformStream } from './transformStreams.js'
 import type { VoidElementTagName } from './voidElements.js'
@@ -44,15 +46,16 @@ export const createElement: (
         childrenAsStreams
       : // This is an intrinsic element.
         ([
-          ReadableStream.from([
-            { kind: 'startOfOpeningTag', tagName: tagNameOrFragmentFunction },
-          ]),
+          readableStreamFromChunk({
+            kind: 'startOfOpeningTag',
+            tagName: tagNameOrFragmentFunction,
+          }),
           possiblyDeferredAttributesToHTMLTokenStream(attributes ?? {}),
-          ReadableStream.from([{ kind: 'endOfOpeningTag' }]),
+          readableStreamFromChunk({ kind: 'endOfOpeningTag' }),
 
           ...childrenAsStreams,
 
-          ReadableStream.from([{ kind: 'closingTag' }]),
+          readableStreamFromChunk({ kind: 'closingTag' }),
         ] satisfies readonly ReadableHTMLTokenStream[])
 
   return concatReadableStreams(streamComponents)
