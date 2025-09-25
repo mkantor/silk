@@ -6,6 +6,7 @@ import type { HTMLToken } from './htmlToken.js'
 import {
   concatReadableStreams,
   readableStreamFromChunk,
+  readableStreamFromIterable,
 } from './readableStream.js'
 import type { TagName } from './tagName.js'
 import { TextCapturingTransformStream } from './transformStreams.js'
@@ -85,27 +86,14 @@ type Child =
 
 const childToReadableHTMLTokenStream = (
   child: Child,
-): ReadableHTMLTokenStream =>
-  new ReadableStream({
-    start: async controller => {
-      try {
-        const awaitedChild = await child
-        if (
-          typeof awaitedChild === 'object' &&
-          Symbol.asyncIterator in awaitedChild
-        ) {
-          for await (const value of awaitedChild) {
-            controller.enqueue(value)
-          }
-        } else {
-          controller.enqueue(awaitedChild)
-        }
-        controller.close()
-      } catch (error) {
-        controller.error(error)
-      }
-    },
-  }).pipeThrough(new TextCapturingTransformStream())
+): ReadableHTMLTokenStream => {
+  let stream =
+    typeof child === 'object' && Symbol.asyncIterator in child
+      ? readableStreamFromIterable<HTMLToken | string>(child)
+      : readableStreamFromChunk(child)
+
+  return stream.pipeThrough(new TextCapturingTransformStream())
+}
 
 const isReadonlyArray: (value: unknown) => value is readonly unknown[] =
   Array.isArray
