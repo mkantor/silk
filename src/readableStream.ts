@@ -1,20 +1,33 @@
 export const concatReadableStreams = <T>(
   streams: readonly ReadableStream<T>[],
-): ReadableStream<T> =>
-  new ReadableStream({
-    start: async controller => {
-      try {
-        for (const stream of streams) {
-          for await (const chunk of stream) {
-            controller.enqueue(chunk)
-          }
+): ReadableStream<T> => {
+  let currentIndex = 0
+  let currentIterator: AsyncIterator<T> | undefined =
+    streams[currentIndex]?.[Symbol.asyncIterator]()
+
+  return new ReadableStream({
+    pull: async controller => {
+      let nextResult: IteratorResult<T, undefined> = {
+        done: true,
+        value: undefined,
+      }
+      while (nextResult.done && currentIterator !== undefined) {
+        nextResult = await currentIterator.next()
+        if (nextResult.done) {
+          // Try again with the next stream.
+          currentIndex = currentIndex + 1
+          currentIterator = streams[currentIndex]?.[Symbol.asyncIterator]()
         }
+      }
+
+      if (nextResult.done) {
         controller.close()
-      } catch (error) {
-        controller.error(error)
+      } else {
+        controller.enqueue(nextResult.value)
       }
     },
   })
+}
 
 export const readableStreamFromChunk = <R>(
   chunk: R | Promise<R>,
