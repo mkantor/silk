@@ -1,41 +1,30 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
 import { ReadableStream } from 'web-streams-polyfill'
-import {
-  type PossiblyDeferredHTML,
-  type ReadableHTMLStream,
-} from './createElement.js'
+import { type ReadableHTMLStream } from './createElement.js'
 import { createElement } from './jsx.js'
+import { asArrayOfHTMLFragments } from './testUtilities.test.js'
 import { trusted } from './trust.js'
-
-// TODO: Switch to `Array.fromAsync`.
-const arrayFromPossiblyDeferredHTML = async (source: PossiblyDeferredHTML) => {
-  const array = []
-  for await (const element of await source) {
-    array.push(element)
-  }
-  return array
-}
 
 suite('jsx', _ => {
   test('empty fragment', async _ =>
-    assert.deepEqual(await arrayFromPossiblyDeferredHTML(<></>), []))
+    assert.deepEqual(await asArrayOfHTMLFragments(<></>), []))
 
   test('fragment with text content', async _ =>
-    assert.deepEqual(await arrayFromPossiblyDeferredHTML(<>blah</>), ['blah']))
+    assert.deepEqual(await asArrayOfHTMLFragments(<>blah</>), ['blah']))
 
   test('fragment with escaping', async _ =>
-    assert.deepEqual(await arrayFromPossiblyDeferredHTML(<>&</>), ['&amp;']))
+    assert.deepEqual(await asArrayOfHTMLFragments(<>&</>), ['&amp;']))
 
   test('empty element', async _ =>
-    assert.deepEqual(await arrayFromPossiblyDeferredHTML(<a></a>), [
+    assert.deepEqual(await asArrayOfHTMLFragments(<a></a>), [
       '<a',
       '>',
       '</a>',
     ]))
 
   test('element with text content', async _ =>
-    assert.deepEqual(await arrayFromPossiblyDeferredHTML(<a>a</a>), [
+    assert.deepEqual(await asArrayOfHTMLFragments(<a>a</a>), [
       '<a',
       '>',
       'a',
@@ -44,7 +33,7 @@ suite('jsx', _ => {
 
   test('nested fragments', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         <>
           <a>
             <>
@@ -58,7 +47,7 @@ suite('jsx', _ => {
 
   test('fragment with element and non-element children', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         <>
           a<a>a</a>a
         </>,
@@ -68,19 +57,21 @@ suite('jsx', _ => {
 
   test('element with string attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<a href="https://example.com">a</a>),
+      await asArrayOfHTMLFragments(<a href="https://example.com">a</a>),
       ['<a', ' href="https://example.com"', '>', 'a', '</a>'],
     ))
 
   test('element with newlines in content', async _ =>
-    assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<div>{'\n\n\n\n\n'}</div>),
-      ['<div', '>', '\n\n\n\n\n', '</div>'],
-    ))
+    assert.deepEqual(await asArrayOfHTMLFragments(<div>{'\n\n\n\n\n'}</div>), [
+      '<div',
+      '>',
+      '\n\n\n\n\n',
+      '</div>',
+    ]))
 
   test('element with element and non-element children', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         <div>
           a<div>b</div>c
         </div>,
@@ -90,7 +81,7 @@ suite('jsx', _ => {
 
   test('element with multiple separate text children', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         <div>
           {'a'}b{'c'}
         </div>,
@@ -100,21 +91,21 @@ suite('jsx', _ => {
 
   test('element with style attribute', async _ => {
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<div style="color: red"></div>),
+      await asArrayOfHTMLFragments(<div style="color: red"></div>),
       ['<div', ' style="color: red"', '>', '</div>'],
     )
   })
 
   test('element with event handler attribute', async _ => {
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<div onclick="alert('hi')"></div>),
+      await asArrayOfHTMLFragments(<div onclick="alert('hi')"></div>),
       ['<div', ' onclick="alert(&apos;hi&apos;)"', '>', '</div>'],
     )
   })
 
   test('void elements', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         <>
           <br />
           {/* This is legal, but becomes a single self-closing tag: */}
@@ -125,7 +116,7 @@ suite('jsx', _ => {
     ))
 
   test('self-closing non-void element', async _ =>
-    assert.deepEqual(await arrayFromPossiblyDeferredHTML(<div />), [
+    assert.deepEqual(await asArrayOfHTMLFragments(<div />), [
       '<div',
       '>',
       '</div>',
@@ -133,7 +124,7 @@ suite('jsx', _ => {
 
   test('void element with attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==" />,
       ),
       [
@@ -145,12 +136,12 @@ suite('jsx', _ => {
 
   test('void element with escaped attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<img title='hello"world' />),
+      await asArrayOfHTMLFragments(<img title='hello"world' />),
       ['<img', ' title="hello&quot;world"', '>'],
     ))
 
   test('element with escaped text content', async _ =>
-    assert.deepEqual(await arrayFromPossiblyDeferredHTML(<div>{'<&>'}</div>), [
+    assert.deepEqual(await asArrayOfHTMLFragments(<div>{'<&>'}</div>), [
       '<div',
       '>',
       '&lt;&amp;&gt;',
@@ -158,20 +149,22 @@ suite('jsx', _ => {
     ]))
 
   test('element with boolean attribute', async _ =>
-    assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<video autoplay></video>),
-      ['<video', ' autoplay', '>', '</video>'],
-    ))
+    assert.deepEqual(await asArrayOfHTMLFragments(<video autoplay></video>), [
+      '<video',
+      ' autoplay',
+      '>',
+      '</video>',
+    ]))
 
   test('false boolean attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<video autoplay={false}></video>),
+      await asArrayOfHTMLFragments(<video autoplay={false}></video>),
       ['<video', '>', '</video>'],
     ))
 
   test('true boolean attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<video autoplay={true}></video>),
+      await asArrayOfHTMLFragments(<video autoplay={true}></video>),
       ['<video', ' autoplay', '>', '</video>'],
     ))
 
@@ -191,9 +184,7 @@ suite('jsx', _ => {
 
   test('stream content', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
-        <div>{ReadableStream.from(['<&>'])}</div>,
-      ),
+      await asArrayOfHTMLFragments(<div>{ReadableStream.from(['<&>'])}</div>),
       ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))
 
@@ -202,7 +193,7 @@ suite('jsx', _ => {
       Promise.resolve('<marquee>🕴</marquee>')
     trustedPromise[trusted] = true
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<div>{trustedPromise}</div>),
+      await asArrayOfHTMLFragments(<div>{trustedPromise}</div>),
       [
         '<div',
         '>',
@@ -217,22 +208,23 @@ suite('jsx', _ => {
       '<marquee>🕴</marquee>',
     ])
     trustedStream[trusted] = true
-    assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<div>{trustedStream}</div>),
-      [
-        '<div',
-        '>',
-        '<marquee>🕴</marquee>', // No escaping.
-        '</div>',
-      ],
-    )
+    assert.deepEqual(await asArrayOfHTMLFragments(<div>{trustedStream}</div>), [
+      '<div',
+      '>',
+      '<marquee>🕴</marquee>', // No escaping.
+      '</div>',
+    ])
   })
 
   test('array children', async _ => {
-    assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(<div>{[<div></div>]}</div>),
-      ['<div', '>', '<div', '>', '</div>', '</div>'],
-    )
+    assert.deepEqual(await asArrayOfHTMLFragments(<div>{[<div></div>]}</div>), [
+      '<div',
+      '>',
+      '<div',
+      '>',
+      '</div>',
+      '</div>',
+    ])
   })
 })
 

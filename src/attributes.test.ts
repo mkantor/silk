@@ -4,17 +4,8 @@ import {
   stringifyAttributeOrThrow,
   stringifyPossiblyDeferredAttributes,
 } from './attributes.js'
-import type { PossiblyDeferredHTML } from './createElement.js'
+import { asArrayOfHTMLFragments } from './testUtilities.test.js'
 import { trusted, type PossiblyTrusted, type Trusted } from './trust.js'
-
-// TODO: Switch to `Array.fromAsync`.
-const arrayFromPossiblyDeferredHTML = async (source: PossiblyDeferredHTML) => {
-  const array = []
-  for await (const element of await source) {
-    array.push(element)
-  }
-  return array
-}
 
 suite('attributes', _ => {
   test('basic attribute', _ =>
@@ -65,7 +56,7 @@ suite('attributes', _ => {
 
   test('possibly-deferred attributes', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         stringifyPossiblyDeferredAttributes({
           id: 'a',
           title: 'Calvin & Hobbes',
@@ -112,7 +103,7 @@ suite('attributes', _ => {
     trust(trustedStream)
 
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         stringifyPossiblyDeferredAttributes({
           autofocus: trustedPromiseOfTrue,
           allowfullscreen: trustedPromiseOfFalse,

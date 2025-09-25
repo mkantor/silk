@@ -2,17 +2,7 @@ import assert from 'node:assert'
 import test, { suite } from 'node:test'
 import { ReadableStream } from 'web-streams-polyfill'
 import { concatReadableStreams } from './readableStream.js'
-
-// TODO: Switch to `Array.fromAsync`.
-const arrayFromAsync = async <T>(
-  source: AsyncIterable<T>,
-): Promise<readonly T[]> => {
-  const array = []
-  for await (const element of source) {
-    array.push(element)
-  }
-  return array
-}
+import { arrayFromAsync } from './testUtilities.test.js'
 
 suite('readable stream', _ => {
   test('concatenating nothing', async _ =>

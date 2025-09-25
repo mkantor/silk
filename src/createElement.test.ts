@@ -1,38 +1,27 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
 import { ReadableStream } from 'web-streams-polyfill'
-import {
-  createElement,
-  type PossiblyDeferredHTML,
-  type ReadableHTMLStream,
-} from './createElement.js'
+import { createElement, type ReadableHTMLStream } from './createElement.js'
+import { asArrayOfHTMLFragments } from './testUtilities.test.js'
 import { trusted } from './trust.js'
-
-// TODO: Switch to `Array.fromAsync`.
-const arrayFromPossiblyDeferredHTML = async (source: PossiblyDeferredHTML) => {
-  const array = []
-  for await (const element of await source) {
-    array.push(element)
-  }
-  return array
-}
 
 suite('createElement', _ => {
   test('empty element', async _ =>
-    assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(createElement('a', {})),
-      ['<a', '>', '</a>'],
-    ))
+    assert.deepEqual(await asArrayOfHTMLFragments(createElement('a', {})), [
+      '<a',
+      '>',
+      '</a>',
+    ]))
 
   test('element with text content', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(createElement('a', {}, 'a')),
+      await asArrayOfHTMLFragments(createElement('a', {}, 'a')),
       ['<a', '>', 'a', '</a>'],
     ))
 
   test('element with string attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         createElement('a', { href: 'https://example.com' }, 'a'),
       ),
       ['<a', ' href="https://example.com"', '>', 'a', '</a>'],
@@ -40,7 +29,7 @@ suite('createElement', _ => {
 
   test('element with element and non-element children', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         createElement('div', {}, 'a', createElement('div', {}, 'b'), 'c'),
       ),
       ['<div', '>', 'a', '<div', '>', 'b', '</div>', 'c', '</div>'],
@@ -48,21 +37,19 @@ suite('createElement', _ => {
 
   test('element with multiple separate text children', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
-        createElement('div', {}, 'a', 'b', 'c'),
-      ),
+      await asArrayOfHTMLFragments(createElement('div', {}, 'a', 'b', 'c')),
       ['<div', '>', 'a', 'b', 'c', '</div>'],
     ))
 
   test('void elements', async _ =>
-    assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(createElement('br', {})),
-      ['<br', '>'],
-    ))
+    assert.deepEqual(await asArrayOfHTMLFragments(createElement('br', {})), [
+      '<br',
+      '>',
+    ]))
 
   test('void element with attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         createElement('img', {
           src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==',
         }),
@@ -76,7 +63,7 @@ suite('createElement', _ => {
 
   test('void element with escaped attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         createElement('img', {
           title: 'hello"world',
         }),
@@ -86,29 +73,25 @@ suite('createElement', _ => {
 
   test('element with escaped text content', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(createElement('div', {}, '<&>')),
+      await asArrayOfHTMLFragments(createElement('div', {}, '<&>')),
       ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))
 
   test('false boolean attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
-        createElement('video', { autoplay: false }),
-      ),
+      await asArrayOfHTMLFragments(createElement('video', { autoplay: false })),
       ['<video', '>', '</video>'],
     ))
 
   test('true boolean attribute', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
-        createElement('video', { autoplay: true }),
-      ),
+      await asArrayOfHTMLFragments(createElement('video', { autoplay: true })),
       ['<video', ' autoplay', '>', '</video>'],
     ))
 
   test('promise content', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         createElement('div', {}, Promise.resolve('<&>')),
       ),
       ['<div', '>', '&lt;&amp;&gt;', '</div>'],
@@ -116,7 +99,7 @@ suite('createElement', _ => {
 
   test('stream content', async _ =>
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
+      await asArrayOfHTMLFragments(
         createElement('div', {}, ReadableStream.from(['<&>'])),
       ),
       ['<div', '>', '&lt;&amp;&gt;', '</div>'],
@@ -127,9 +110,7 @@ suite('createElement', _ => {
       Promise.resolve('<marquee>🕴</marquee>')
     trustedPromise[trusted] = true
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
-        createElement('div', {}, trustedPromise),
-      ),
+      await asArrayOfHTMLFragments(createElement('div', {}, trustedPromise)),
       [
         '<div',
         '>',
@@ -145,9 +126,7 @@ suite('createElement', _ => {
     ])
     trustedStream[trusted] = true
     assert.deepEqual(
-      await arrayFromPossiblyDeferredHTML(
-        createElement('div', {}, trustedStream),
-      ),
+      await asArrayOfHTMLFragments(createElement('div', {}, trustedStream)),
       [
         '<div',
         '>',
