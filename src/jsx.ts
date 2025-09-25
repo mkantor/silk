@@ -14,7 +14,7 @@ export declare namespace createElement.JSX {
     }
 
   type IntrinsicElements = {
-    [SpecificTagName in TagName]: HTML<SpecificTagName>
+    readonly [SpecificTagName in TagName]: HTML<SpecificTagName>
   }
 
   type ElementChildrenAttribute = {

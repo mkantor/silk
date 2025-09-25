@@ -81,7 +81,7 @@ export const createElement: (
 
 type CreateElementParameters =
   | {
-      [SpecificTagName in TagName]: readonly [
+      readonly [SpecificTagName in TagName]: readonly [
         tagName: SpecificTagName,
         attributes: PossiblyDeferredAttributesByTagName[SpecificTagName] | null,
         ...children: Children<SpecificTagName>,
