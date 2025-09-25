@@ -16,11 +16,18 @@ export const concatReadableStreams = <T>(
     },
   })
 
-export const readableStreamFromChunk = <R>(chunk: R): ReadableStream<R> =>
+export const readableStreamFromChunk = <R>(
+  chunk: R | Promise<R>,
+): ReadableStream<R> =>
   new ReadableStream({
-    pull: async (controller): Promise<undefined> => {
-      controller.enqueue(chunk)
-      controller.close()
+    pull: async controller => {
+      try {
+        const awaitedChunk = await chunk
+        controller.enqueue(awaitedChunk)
+        controller.close()
+      } catch (error) {
+        controller.error(error)
+      }
     },
   })
 
