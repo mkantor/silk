@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
-import { possiblyDeferredAttributesToHTMLTokenStream } from './attributes.js'
+import { attributesToHTMLTokenStream } from './attributes.js'
 import { readableStreamFromIterable } from './readableStream.js'
 import { arrayFromAsync } from './testUtilities.test.js'
 
@@ -8,7 +8,7 @@ suite('attributes', _ => {
   test('basic attributes', async _ =>
     assert.deepEqual(
       await arrayFromAsync(
-        possiblyDeferredAttributesToHTMLTokenStream({
+        attributesToHTMLTokenStream({
           id: 'a',
           title: 'Calvin & Hobbes',
           autoplay: true,
@@ -26,7 +26,7 @@ suite('attributes', _ => {
   test('invalid attribute value', _ =>
     assert.rejects(async () => {
       const invalidAttributes: {} = { oops: 42 }
-      for await (const _chunk of possiblyDeferredAttributesToHTMLTokenStream(
+      for await (const _chunk of attributesToHTMLTokenStream(
         invalidAttributes,
       )) {
       }
@@ -35,7 +35,7 @@ suite('attributes', _ => {
   test('invalid attribute name', _ =>
     assert.rejects(async () => {
       const invalidAttributes: {} = { ['invalid attribute']: '' }
-      for await (const _chunk of possiblyDeferredAttributesToHTMLTokenStream(
+      for await (const _chunk of attributesToHTMLTokenStream(
         invalidAttributes,
       )) {
       }
@@ -44,7 +44,7 @@ suite('attributes', _ => {
   test('deferred attributes', async _ =>
     assert.deepEqual(
       await arrayFromAsync(
-        possiblyDeferredAttributesToHTMLTokenStream({
+        attributesToHTMLTokenStream({
           autoplay: Promise.resolve(true),
           checked: Promise.resolve(false),
           href: Promise.resolve('https://example.com?a=1&b=2'),

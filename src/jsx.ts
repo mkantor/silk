@@ -1,4 +1,4 @@
-import type { PossiblyDeferredAttributesByTagName } from './attributes.js'
+import type { AttributesByTagName } from './attributes.js'
 import type {
   Children as CreateElementChildren,
   ReadableHTMLTokenStream,
@@ -11,7 +11,7 @@ export { createElement } from './createElement.js'
 export declare namespace createElement.JSX {
   // This type alias exists to improve type info for JSX tags.
   type HTML<SpecificTagName extends TagName> =
-    PossiblyDeferredAttributesByTagName[SpecificTagName] & {
+    AttributesByTagName[SpecificTagName] & {
       // This results in void elements having `never` for `_children`.
       readonly [_children]?: CreateElementChildren<SpecificTagName>[number]
     }

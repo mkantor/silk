@@ -1,6 +1,6 @@
 import {
-  possiblyDeferredAttributesToHTMLTokenStream,
-  type PossiblyDeferredAttributesByTagName,
+  attributesToHTMLTokenStream,
+  type AttributesByTagName,
 } from './attributes.js'
 import type { HTMLToken } from './htmlToken.js'
 import {
@@ -51,7 +51,7 @@ export const createElement: (
             kind: 'startOfOpeningTag',
             tagName: tagNameOrFragmentFunction,
           }),
-          possiblyDeferredAttributesToHTMLTokenStream(attributes ?? {}),
+          attributesToHTMLTokenStream(attributes ?? {}),
           readableStreamFromChunk({ kind: 'endOfOpeningTag' }),
 
           ...childrenAsStreams,
@@ -66,7 +66,7 @@ type CreateElementParameters =
   | {
       readonly [SpecificTagName in TagName]: readonly [
         tagName: SpecificTagName,
-        attributes: PossiblyDeferredAttributesByTagName[SpecificTagName] | null,
+        attributes: AttributesByTagName[SpecificTagName] | null,
         ...children: Children<SpecificTagName>,
       ]
     }[TagName]
