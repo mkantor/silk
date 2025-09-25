@@ -1,7 +1,10 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
-import { ReadableStream } from 'web-streams-polyfill'
-import { concatReadableStreams } from './readableStream.js'
+import {
+  concatReadableStreams,
+  readableStreamFromChunk,
+  readableStreamFromIterable,
+} from './readableStream.js'
 import { arrayFromAsync } from './testUtilities.test.js'
 
 suite('readable stream', _ => {
@@ -12,10 +15,10 @@ suite('readable stream', _ => {
     assert.deepEqual(
       await arrayFromAsync(
         concatReadableStreams([
-          ReadableStream.from(['a']),
-          ReadableStream.from(['b', 'c']),
-          ReadableStream.from([]),
-          ReadableStream.from(ReadableStream.from(['d'])),
+          readableStreamFromChunk('a'),
+          readableStreamFromIterable(['b', 'c']),
+          readableStreamFromIterable([]),
+          readableStreamFromIterable(readableStreamFromIterable(['d'])),
         ]),
       ),
       ['a', 'b', 'c', 'd'],

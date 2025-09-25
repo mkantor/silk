@@ -1,19 +1,69 @@
-import { ReadableStream } from 'web-streams-polyfill'
-
 export const concatReadableStreams = <T>(
   streams: readonly ReadableStream<T>[],
-): ReadableStream<T> =>
-  new ReadableStream({
-    start: async controller => {
-      try {
-        for (const stream of streams) {
-          for await (const chunk of stream) {
-            controller.enqueue(chunk)
-          }
+): ReadableStream<T> => {
+  let currentIndex = 0
+  let currentIterator: AsyncIterator<T> | undefined =
+    streams[currentIndex]?.[Symbol.asyncIterator]()
+
+  return new ReadableStream({
+    pull: async controller => {
+      let nextResult: IteratorResult<T, undefined> = {
+        done: true,
+        value: undefined,
+      }
+      while (nextResult.done && currentIterator !== undefined) {
+        nextResult = await currentIterator.next()
+        if (nextResult.done) {
+          // Try again with the next stream.
+          currentIndex = currentIndex + 1
+          currentIterator = streams[currentIndex]?.[Symbol.asyncIterator]()
         }
+      }
+
+      if (nextResult.done) {
+        controller.close()
+      } else {
+        controller.enqueue(nextResult.value)
+      }
+    },
+  })
+}
+
+export const readableStreamFromChunk = <R>(
+  chunk: R | Promise<R>,
+): ReadableStream<R> =>
+  new ReadableStream({
+    pull: async controller => {
+      try {
+        const awaitedChunk = await chunk
+        controller.enqueue(awaitedChunk)
         controller.close()
       } catch (error) {
         controller.error(error)
       }
     },
   })
+
+// TODO: Adopt `ReadableStream.from`.
+export const readableStreamFromIterable = <R>(
+  iterable: Iterable<R> | AsyncIterable<R>,
+): ReadableStream<R> => {
+  const iterator =
+    Symbol.asyncIterator in iterable
+      ? iterable[Symbol.asyncIterator]()
+      : iterable[Symbol.iterator]()
+  return new ReadableStream({
+    pull: async controller => {
+      try {
+        const nextResult = await iterator.next()
+        if (nextResult.done) {
+          controller.close()
+        } else {
+          controller.enqueue(nextResult.value)
+        }
+      } catch (error) {
+        controller.error(error)
+      }
+    },
+  })
+}

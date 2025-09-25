@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
-import { ReadableStream } from 'web-streams-polyfill'
 import { createElement } from './createElement.js'
+import { readableStreamFromChunk } from './readableStream.js'
 import { asArrayOfHTMLFragments } from './testUtilities.test.js'
 
 suite('createElement', _ => {
@@ -99,7 +99,7 @@ suite('createElement', _ => {
   test('stream content', async _ =>
     assert.deepEqual(
       await asArrayOfHTMLFragments(
-        createElement('div', {}, ReadableStream.from(['<&>'])),
+        createElement('div', {}, readableStreamFromChunk('<&>')),
       ),
       ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))

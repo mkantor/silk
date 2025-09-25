@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
-import { ReadableStream } from 'web-streams-polyfill'
 import type { HTMLToken } from './htmlToken.js'
+import { readableStreamFromIterable } from './readableStream.js'
 import { arrayFromAsync } from './testUtilities.test.js'
 import {
   HTMLSerializingTransformStream,
@@ -12,7 +12,7 @@ suite('transform streams', _ => {
   test('text capturing', async _ => {
     assert.deepEqual(
       await arrayFromAsync(
-        ReadableStream.from([
+        readableStreamFromIterable([
           { kind: 'startOfOpeningTag', tagName: 'a' } satisfies HTMLToken,
           { kind: 'endOfOpeningTag' } satisfies HTMLToken,
           'a',
@@ -35,7 +35,7 @@ suite('transform streams', _ => {
   test('HTML serialization', async _ => {
     assert.deepEqual(
       await arrayFromAsync(
-        ReadableStream.from([
+        readableStreamFromIterable([
           { kind: 'startOfOpeningTag', tagName: 'a' },
           {
             kind: 'attribute',

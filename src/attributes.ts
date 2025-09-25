@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLElements, ValueSets } from '@michijs/htmltype'
-import { ReadableStream } from 'web-streams-polyfill'
 import type { HTMLToken } from './htmlToken.js'
+import { readableStreamFromIterable } from './readableStream.js'
 
 /**
  * Attribute values are specifically-typed based on the tag and attribute name.
@@ -18,11 +18,9 @@ export type PossiblyDeferredAttributesByTagName = {
 export const possiblyDeferredAttributesToHTMLTokenStream = (
   attributes: UnknownPossiblyDeferredAttributes,
 ): ReadableStream<AttributeHTMLToken> =>
-  new ReadableStream({
-    start: async controller => {
-      for (const [attributeName, attributeValue] of Object.entries(
-        attributes,
-      )) {
+  readableStreamFromIterable(Object.entries(attributes)).pipeThrough(
+    new TransformStream({
+      transform: async ([attributeName, attributeValue], controller) => {
         try {
           const awaitedAttributeValue = await attributeValue
           if (
@@ -30,6 +28,8 @@ export const possiblyDeferredAttributesToHTMLTokenStream = (
             awaitedAttributeValue !== null &&
             Symbol.asyncIterator in awaitedAttributeValue
           ) {
+            // Async iterable attribute values are buffered and emitted as a
+            // single attribute value.
             let bufferedAttributeValue = ''
             for await (const attributeValue of awaitedAttributeValue) {
               bufferedAttributeValue =
@@ -49,12 +49,10 @@ export const possiblyDeferredAttributesToHTMLTokenStream = (
           }
         } catch (error) {
           controller.error(error)
-          return
         }
-      }
-      controller.close()
-    },
-  })
+      },
+    }),
+  )
 
 type AttributeHTMLToken = Extract<HTMLToken, { kind: 'attribute' }>
 

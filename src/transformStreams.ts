@@ -1,5 +1,4 @@
 import * as htmlEntities from 'html-entities'
-import { TransformStream } from 'web-streams-polyfill'
 import { type HTMLToken } from './htmlToken.js'
 import type { TagName } from './tagName.js'
 import { isVoidElementTagName } from './voidElements.js'
