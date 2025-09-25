@@ -1,7 +1,12 @@
 import { ReadableStream } from 'web-streams-polyfill'
-import { stringifyAttributes, type AttributesByTagName } from './attributes.js'
+import {
+  stringifyPossiblyDeferredAttributes,
+  type PossiblyDeferredAttributesByTagName,
+  type TagName,
+} from './attributes.js'
 import { makeHTMLEscapingTransformStream } from './escaping.js'
 import { concatReadableStreams } from './readableStream.js'
+import { trusted, type PossiblyTrusted } from './trust.js'
 import {
   isVoidElementTagName,
   type VoidElementTagName,
@@ -15,16 +20,10 @@ export type PossiblyDeferredHTML =
 export type ReadableHTMLStream = ReadableStream<string> & PossiblyTrusted
 
 /** The type of the `...children` rest parameter of `createElement`. */
-export type Children<TagName extends keyof AttributesByTagName> =
-  TagName extends VoidElementTagName
+export type Children<SpecificTagName extends TagName> =
+  SpecificTagName extends VoidElementTagName
     ? readonly []
     : readonly (PossiblyDeferredHTML | readonly PossiblyDeferredHTML[])[]
-
-/**
- * Children where `child[trusted] === true` are considered safe to emit without
- * escaping.
- */
-export const trusted = Symbol('trusted')
 
 /**
  * Creates an HTML element from the given tag name, attributes, and children,
@@ -56,17 +55,16 @@ export const createElement: (
       ),
     )
   } else {
-    const stringifiedAttributes =
-      attributes === null ? '' : stringifyAttributes(attributes)
+    const openingTag = concatReadableStreams([
+      ReadableStream.from(['<'.concat(tagNameOrFragmentFunction)]),
+      stringifyPossiblyDeferredAttributes(attributes ?? {}),
+      ReadableStream.from(['>']),
+    ])
 
     stream = isVoidElementTagName(tagNameOrFragmentFunction)
-      ? ReadableStream.from([
-          '<'.concat(tagNameOrFragmentFunction, stringifiedAttributes, '>'),
-        ])
+      ? openingTag
       : concatReadableStreams([
-          ReadableStream.from([
-            '<'.concat(tagNameOrFragmentFunction, stringifiedAttributes, '>'),
-          ]),
+          openingTag,
           ...children.map(child =>
             isReadonlyArray(child)
               ? concatReadableStreams(child.map(escapeAsNeeded))
@@ -83,12 +81,12 @@ export const createElement: (
 
 type CreateElementParameters =
   | {
-      [TagName in keyof AttributesByTagName]: readonly [
-        tagName: TagName,
-        attributes: AttributesByTagName[TagName] | null,
-        ...children: Children<TagName>,
+      [SpecificTagName in TagName]: readonly [
+        tagName: SpecificTagName,
+        attributes: PossiblyDeferredAttributesByTagName[SpecificTagName] | null,
+        ...children: Children<SpecificTagName>,
       ]
-    }[keyof AttributesByTagName]
+    }[TagName]
 
 type CreateFragmentParameters = readonly [
   // With standard configuration this will be `createElement` itself.
@@ -96,8 +94,6 @@ type CreateFragmentParameters = readonly [
   attributes: null,
   ...children: readonly PossiblyDeferredHTML[],
 ]
-
-type PossiblyTrusted = { [trusted]?: true }
 
 const escapeAsNeeded = (element: PossiblyDeferredHTML): ReadableHTMLStream => {
   const stream = elementAsReadableStream(element)
@@ -119,12 +115,15 @@ const elementAsReadableStream = (
     start: async controller => {
       try {
         const awaitedElement = await element
-        if (typeof awaitedElement === 'string') {
-          controller.enqueue(awaitedElement)
-        } else {
+        if (
+          typeof awaitedElement === 'object' &&
+          Symbol.asyncIterator in awaitedElement
+        ) {
           for await (const value of awaitedElement) {
             controller.enqueue(value)
           }
+        } else {
+          controller.enqueue(awaitedElement)
         }
         controller.close()
       } catch (error) {

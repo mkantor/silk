@@ -1,76 +1,159 @@
 import type { CSSProperties, HTMLElements, ValueSets } from '@michijs/htmltype'
+import { ReadableStream } from 'web-streams-polyfill'
 import { escapeHTMLContent } from './escaping.js'
+import { trusted, type PossiblyTrusted } from './trust.js'
 
 /**
- * Attribute values are strings, except for boolean attributes like `autoplay`.
+ * Attribute values are specifically-typed based on the tag and attribute
+ * name. Depending on the attribute, the value must ultimately be either a
+ * string or a boolean. Attribute values may be deferred via `Promise`s and
+ * async iterables.
  */
-export type AttributesByTagName = {
-  readonly [TagName in keyof HTMLElements<{}>]: {
-    readonly [AttributeName in keyof HTMLElements<{}>[TagName]]: HTMLElements<{}>[TagName][AttributeName] extends infer AttributeValue
-      ? // @michijs/htmltype allows `string | number | boolean | null` for many
-        // attributes, but we should default to `string`.
-        ValueSets['default'] extends AttributeValue
-        ? string
-        : Extract<FixUpTypedAttributes<AttributeValue>, string | boolean>
-      : never
+export type PossiblyDeferredAttributesByTagName = {
+  readonly [SpecificTagName in TagName]: {
+    readonly [AttributeName in keyof HTMLElements<{}>[SpecificTagName]]: AllowAttributeValueDeferment<
+      FixUpAttributeValue<HTMLElements<{}>[SpecificTagName][AttributeName]>
+    >
   }
 }
 
+export type TagName = keyof HTMLElements<{}>
+
 /**
- * Returns a string of HTML attributes with a leading space. Escapes attribute
- * values. For example:
+ * Returns a stream of HTML-encoded attributes with a leading space. Escapes
+ * untrusted attribute values.
+ */
+export const stringifyPossiblyDeferredAttributes = (
+  attributes: UnknownPossiblyDeferredAttributes,
+): ReadableStream<string> =>
+  new ReadableStream({
+    start: async controller => {
+      for (const [attributeName, attributeValue] of Object.entries(
+        attributes,
+      )) {
+        try {
+          const attributeValueIsTrusted =
+            typeof attributeValue === 'object' &&
+            trusted in attributeValue &&
+            attributeValue[trusted] === true
+
+          const awaitedAttributeValue = await attributeValue
+          if (
+            typeof awaitedAttributeValue === 'object' &&
+            awaitedAttributeValue !== null &&
+            Symbol.asyncIterator in awaitedAttributeValue
+          ) {
+            let bufferedAttributeValue = ''
+            for await (const attributeValue of awaitedAttributeValue) {
+              bufferedAttributeValue =
+                bufferedAttributeValue.concat(attributeValue)
+            }
+            controller.enqueue(
+              stringifyAttributeOrThrow(attributeName, bufferedAttributeValue, {
+                trusted: attributeValueIsTrusted,
+              }),
+            )
+          } else if (awaitedAttributeValue !== undefined) {
+            const stringifiedAttribute = stringifyAttributeOrThrow(
+              attributeName,
+              awaitedAttributeValue,
+              {
+                trusted: attributeValueIsTrusted,
+              },
+            )
+            if (stringifiedAttribute !== '') {
+              controller.enqueue(stringifiedAttribute)
+            }
+          }
+        } catch (error) {
+          controller.error(error)
+          return
+        }
+      }
+      controller.close()
+    },
+  })
+
+/**
+ * Returns an HTML-encoded attribute name/value pair with a leading space.
+ * Escapes attribute values unless `trusted` is true. For example:
  * ```ts
- * stringifyAttributes({
- *   title: 'Hello, world!',
- *   href: 'https://example.com?a=1&b=2',
- * }) // => ' title="Hello, world!" href="https://example.com?a=1&amp;b=2"'
+ * stringifyAttributeOrThrow('href', 'https://example.com?a=1&b=2', { trusted: false })
+ * // => ' href="https://example.com?a=1&amp;b=2"'
+ * stringifyAttributeOrThrow('href', 'https://example.com?a=1&amp;b=2', { trusted: true })
+ * // => ' href="https://example.com?a=1&amp;b=2"'
  * ```
  */
-export const stringifyAttributes = (attributes: UnknownAttributes): string =>
-  Object.entries(attributes).reduce(
-    (stringifiedAttributes, [attributeName, attributeValue]) => {
-      // We're iterating over an object which may have arbitrary excess
-      // properties, so paranoia is warranted.
-      if (!isLegalAttributeName(attributeName)) {
-        throw new Error(
-          `Attribute name \`${attributeName}\` contains one or more invalid characters`,
-        )
-      } else if (typeof attributeValue === 'string') {
-        return stringifiedAttributes.concat(
-          ' ',
-          escapeHTMLContent(attributeName),
-          '="',
-          escapeHTMLContent(attributeValue),
-          '"',
-        )
-      } else if (attributeValue === true) {
-        // Boolean attributes do not require a value.
-        return stringifiedAttributes.concat(
-          ' ',
-          escapeHTMLContent(attributeName),
-        )
-      } else if (attributeValue === false) {
-        return stringifiedAttributes
-      } else {
-        throw new Error(
-          `Attribute value for \`${attributeName}\` has invalid type (${typeof attributeValue})`,
-        )
-      }
-    },
-    '',
-  )
+export const stringifyAttributeOrThrow = (
+  attributeName: string,
+  attributeValue: Primitive,
+  { trusted }: { readonly trusted: boolean },
+): string => {
+  const escapeUnlessTrusted = trusted
+    ? (content: string) => content
+    : escapeHTMLContent
 
-// @michijs/htmltype uses functions for event handlers and a `CSSProperties`
-// type for `style`, but here they should be strings (just like other attributes).
-type FixUpTypedAttributes<AttributeValue> = AttributeValue extends (
-  ...parameters: never
-) => unknown
-  ? Exclude<AttributeValue, (...parameters: never) => unknown> | string
-  : AttributeValue extends CSSProperties
-  ? Exclude<AttributeValue, CSSProperties> | string
-  : AttributeValue
+  if (!isLegalAttributeName(attributeName)) {
+    throw new Error(
+      `Attribute name \`${attributeName}\` contains one or more invalid characters`,
+    )
+  } else if (typeof attributeValue === 'string') {
+    return ' '.concat(
+      escapeUnlessTrusted(attributeName),
+      '="',
+      escapeUnlessTrusted(attributeValue),
+      '"',
+    )
+  } else if (attributeValue === true) {
+    // Boolean attributes do not require a value.
+    return ' '.concat(escapeUnlessTrusted(attributeName))
+  } else if (attributeValue === false || attributeValue === undefined) {
+    return ''
+  } else {
+    throw new Error(
+      `Attribute value for \`${attributeName}\` has invalid type (${typeof attributeValue})`,
+    )
+  }
+}
 
-type UnknownAttributes = AttributesByTagName[keyof AttributesByTagName]
+type FixUpAttributeValue<AttributeValue> =
+  // @michijs/htmltype allows `string | number | boolean | null` for many
+  // attributes, but we should default to `string`.
+  ValueSets['default'] extends AttributeValue
+    ? string
+    : Extract<
+        AttributeValue extends (...parameters: never) => unknown
+          ? Exclude<AttributeValue, (...parameters: never) => unknown> | string
+          : AttributeValue extends CSSProperties
+          ? Exclude<AttributeValue, CSSProperties> | string
+          : AttributeValue,
+        string | boolean
+      >
+
+type AllowAttributeValueDeferment<AttributeValue> =
+  | AttributeValue
+  // If it's a string, allow deferment by wrapping in a `Promise` or by using an
+  // async iterable of substrings.
+  | ([AttributeValue] extends [string]
+      ?
+          | (Promise<AttributeValue> & PossiblyTrusted)
+          | (AsyncIterable<string> & PossiblyTrusted)
+      : // If it's boolean, allow deferment wrapping in a `Promise` (an iterable
+      // doesn't make sense; a boolean is just a single value).
+      [AttributeValue] extends [boolean]
+      ? Promise<AttributeValue>
+      : never)
+
+type UnknownPossiblyDeferredAttributes = {
+  readonly [attributeName: string]:
+    | string
+    | boolean
+    | Promise<boolean>
+    | (Promise<string> & PossiblyTrusted)
+    | (AsyncIterable<string> & PossiblyTrusted)
+}
+
+type Primitive = string | number | bigint | boolean | symbol | null | undefined
 
 const isLegalAttributeName = (attributeName: string): boolean =>
   !controlPattern.test(attributeName) &&
