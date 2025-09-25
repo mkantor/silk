@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
 import { ReadableStream } from 'web-streams-polyfill'
-import { type ReadableHTMLStream } from './createElement.js'
+import type { ReadableHTMLStream } from './createElement.js'
 import { createElement } from './jsx.js'
 import { asArrayOfHTMLFragments } from './testUtilities.test.js'
 import { trusted } from './trust.js'
