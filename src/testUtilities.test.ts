@@ -1,3 +1,6 @@
+import type { ReadableHTMLTokenStream } from './createElement.js'
+import { HTMLSerializingTransformStream } from './transformStreams.js'
+
 // TODO: Switch to `Array.fromAsync`.
 export const arrayFromAsync = async <T>(
   source: AsyncIterable<T>,
@@ -9,13 +12,5 @@ export const arrayFromAsync = async <T>(
   return array
 }
 
-// TODO: Switch to `Array.fromAsync`.
-export const asArrayOfHTMLFragments = async (
-  source: string | Promise<string> | AsyncIterable<string>,
-) => {
-  const array = []
-  for await (const element of await source) {
-    array.push(element)
-  }
-  return array
-}
+export const asArrayOfHTMLFragments = async (source: ReadableHTMLTokenStream) =>
+  arrayFromAsync(source.pipeThrough(new HTMLSerializingTransformStream()))

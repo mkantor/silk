@@ -1,10 +1,8 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
 import { ReadableStream } from 'web-streams-polyfill'
-import type { ReadableHTMLStream } from './createElement.js'
 import { createElement } from './jsx.js'
 import { asArrayOfHTMLFragments } from './testUtilities.test.js'
-import { trusted } from './trust.js'
 
 suite('jsx', _ => {
   test('empty fragment', async _ =>
@@ -168,6 +166,14 @@ suite('jsx', _ => {
       ['<video', ' autoplay', '>', '</video>'],
     ))
 
+  test('empty string attribute', async _ =>
+    assert.deepEqual(await asArrayOfHTMLFragments(<div class=""></div>), [
+      '<div',
+      ' class',
+      '>',
+      '</div>',
+    ]))
+
   test('invalid attribute name', async _ =>
     assert.rejects(async () => {
       for await (const _chunk of (
@@ -187,34 +193,6 @@ suite('jsx', _ => {
       await asArrayOfHTMLFragments(<div>{ReadableStream.from(['<&>'])}</div>),
       ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))
-
-  test('trusted promise content', async _ => {
-    const trustedPromise: Promise<string> & { [trusted]?: true } =
-      Promise.resolve('<marquee>🕴</marquee>')
-    trustedPromise[trusted] = true
-    assert.deepEqual(
-      await asArrayOfHTMLFragments(<div>{trustedPromise}</div>),
-      [
-        '<div',
-        '>',
-        '<marquee>🕴</marquee>', // No escaping.
-        '</div>',
-      ],
-    )
-  })
-
-  test('trusted stream content', async _ => {
-    const trustedStream: ReadableHTMLStream = ReadableStream.from([
-      '<marquee>🕴</marquee>',
-    ])
-    trustedStream[trusted] = true
-    assert.deepEqual(await asArrayOfHTMLFragments(<div>{trustedStream}</div>), [
-      '<div',
-      '>',
-      '<marquee>🕴</marquee>', // No escaping.
-      '</div>',
-    ])
-  })
 
   test('array children', async _ => {
     assert.deepEqual(await asArrayOfHTMLFragments(<div>{[<div></div>]}</div>), [
