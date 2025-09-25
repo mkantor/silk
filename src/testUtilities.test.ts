@@ -1,5 +1,3 @@
-import type { PossiblyDeferredHTML } from './createElement.js'
-
 // TODO: Switch to `Array.fromAsync`.
 export const arrayFromAsync = async <T>(
   source: AsyncIterable<T>,
@@ -12,7 +10,9 @@ export const arrayFromAsync = async <T>(
 }
 
 // TODO: Switch to `Array.fromAsync`.
-export const asArrayOfHTMLFragments = async (source: PossiblyDeferredHTML) => {
+export const asArrayOfHTMLFragments = async (
+  source: string | Promise<string> | AsyncIterable<string>,
+) => {
   const array = []
   for await (const element of await source) {
     array.push(element)
