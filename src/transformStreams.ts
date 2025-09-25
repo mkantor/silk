@@ -27,17 +27,20 @@ export class HTMLSerializingTransformStream extends TransformStream<
 > {
   // In a valid stream this will be overwritten before it's used, but we need
   // some initial value.
-  #lastSeenTagName: TagName = 'html'
+  #tagStack: TagName[] = []
   constructor() {
     super({
       transform: (chunk, controller) => {
         if (chunk.kind === 'startOfOpeningTag') {
-          this.#lastSeenTagName = chunk.tagName
+          this.#tagStack.push(chunk.tagName)
         }
         const htmlFragment = htmlTokenToHTMLFragment(
           chunk,
-          this.#lastSeenTagName,
+          this.#tagStack[this.#tagStack.length - 1],
         )
+        if (chunk.kind === 'closingTag') {
+          this.#tagStack.pop()
+        }
         if (htmlFragment !== '') {
           controller.enqueue(htmlFragment)
         }
@@ -53,13 +56,13 @@ export type SerializedHTMLFragment = string & {
 
 const htmlTokenToHTMLFragment = (
   chunk: HTMLToken,
-  lastTagName: TagName,
+  currentTagName: TagName | undefined,
 ): SerializedHTMLFragment => {
   switch (chunk.kind) {
     case 'text':
       return escapeHTMLContent(chunk.text)
     case 'startOfOpeningTag':
-      lastTagName = chunk.tagName
+      currentTagName = chunk.tagName
       return '<'.concat(chunk.tagName) as SerializedHTMLFragment
     case 'attribute':
       return (
@@ -70,8 +73,15 @@ const htmlTokenToHTMLFragment = (
     case 'endOfOpeningTag':
       return '>' as SerializedHTMLFragment
     case 'closingTag':
+      if (currentTagName === undefined) {
+        throw new Error(
+          'Received a `closingTag` token without a current tag name. This is a bug!',
+        )
+      }
       return (
-        isVoidElementTagName(lastTagName) ? '' : '</'.concat(lastTagName, '>')
+        isVoidElementTagName(currentTagName)
+          ? ''
+          : '</'.concat(currentTagName, '>')
       ) as SerializedHTMLFragment
   }
 }
