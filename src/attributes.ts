@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLElements, ValueSets } from '@michijs/htmltype'
 import { ReadableStream } from 'web-streams-polyfill'
 import { escapeHTMLContent } from './escaping.js'
+import type { TagName } from './tagName.js'
 import { trusted, type PossiblyTrusted } from './trust.js'
 
 /**
@@ -16,8 +17,6 @@ export type PossiblyDeferredAttributesByTagName = {
     >
   }
 }
-
-export type TagName = keyof HTMLElements<{}>
 
 /**
  * Returns a stream of HTML-encoded attributes with a leading space. Escapes

@@ -2,20 +2,15 @@ import { ReadableStream } from 'web-streams-polyfill'
 import {
   stringifyPossiblyDeferredAttributes,
   type PossiblyDeferredAttributesByTagName,
-  type TagName,
 } from './attributes.js'
 import { makeHTMLEscapingTransformStream } from './escaping.js'
 import { concatReadableStreams } from './readableStream.js'
+import type { TagName } from './tagName.js'
 import { trusted, type PossiblyTrusted } from './trust.js'
 import {
   isVoidElementTagName,
   type VoidElementTagName,
 } from './voidElements.js'
-
-export type PossiblyDeferredHTML =
-  | string
-  | (Promise<string> & PossiblyTrusted)
-  | (AsyncIterable<string> & PossiblyTrusted)
 
 export type ReadableHTMLStream = ReadableStream<string> & PossiblyTrusted
 
@@ -23,7 +18,7 @@ export type ReadableHTMLStream = ReadableStream<string> & PossiblyTrusted
 export type Children<SpecificTagName extends TagName> =
   SpecificTagName extends VoidElementTagName
     ? readonly []
-    : readonly (PossiblyDeferredHTML | readonly PossiblyDeferredHTML[])[]
+    : readonly (Child | readonly Child[])[]
 
 /**
  * Creates an HTML element from the given tag name, attributes, and children,
@@ -81,7 +76,7 @@ export const createElement: (
 
 type CreateElementParameters =
   | {
-      [SpecificTagName in TagName]: readonly [
+      readonly [SpecificTagName in TagName]: readonly [
         tagName: SpecificTagName,
         attributes: PossiblyDeferredAttributesByTagName[SpecificTagName] | null,
         ...children: Children<SpecificTagName>,
@@ -92,38 +87,39 @@ type CreateFragmentParameters = readonly [
   // With standard configuration this will be `createElement` itself.
   component: (...parameters: never) => unknown,
   attributes: null,
-  ...children: readonly PossiblyDeferredHTML[],
+  ...children: readonly (Child | readonly Child[])[],
 ]
 
-const escapeAsNeeded = (element: PossiblyDeferredHTML): ReadableHTMLStream => {
-  const stream = elementAsReadableStream(element)
+type Child =
+  | string
+  | (Promise<string> & PossiblyTrusted)
+  | (AsyncIterable<string> & PossiblyTrusted)
 
-  const elementIsTrusted =
-    typeof element === 'object' &&
-    trusted in element &&
-    element[trusted] === true
+const escapeAsNeeded = (child: Child): ReadableHTMLStream => {
+  const stream = childAsReadableStream(child)
 
-  return elementIsTrusted
+  const childIsTrusted =
+    typeof child === 'object' && trusted in child && child[trusted] === true
+
+  return childIsTrusted
     ? stream
     : stream.pipeThrough(makeHTMLEscapingTransformStream())
 }
 
-const elementAsReadableStream = (
-  element: PossiblyDeferredHTML,
-): ReadableHTMLStream =>
+const childAsReadableStream = (child: Child): ReadableHTMLStream =>
   new ReadableStream({
     start: async controller => {
       try {
-        const awaitedElement = await element
+        const awaitedChild = await child
         if (
-          typeof awaitedElement === 'object' &&
-          Symbol.asyncIterator in awaitedElement
+          typeof awaitedChild === 'object' &&
+          Symbol.asyncIterator in awaitedChild
         ) {
-          for await (const value of awaitedElement) {
+          for await (const value of awaitedChild) {
             controller.enqueue(value)
           }
         } else {
-          controller.enqueue(awaitedElement)
+          controller.enqueue(awaitedChild)
         }
         controller.close()
       } catch (error) {

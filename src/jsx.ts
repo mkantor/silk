@@ -1,8 +1,6 @@
-import type {
-  PossiblyDeferredAttributesByTagName,
-  TagName,
-} from './attributes.js'
+import type { PossiblyDeferredAttributesByTagName } from './attributes.js'
 import type { Children, ReadableHTMLStream } from './createElement.js'
+import type { TagName } from './tagName.js'
 
 export { createElement } from './createElement.js'
 
@@ -16,7 +14,7 @@ export declare namespace createElement.JSX {
     }
 
   type IntrinsicElements = {
-    [SpecificTagName in TagName]: HTML<SpecificTagName>
+    readonly [SpecificTagName in TagName]: HTML<SpecificTagName>
   }
 
   type ElementChildrenAttribute = {
