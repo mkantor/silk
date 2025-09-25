@@ -2,10 +2,10 @@ import { ReadableStream } from 'web-streams-polyfill'
 import {
   stringifyPossiblyDeferredAttributes,
   type PossiblyDeferredAttributesByTagName,
-  type TagName,
 } from './attributes.js'
 import { makeHTMLEscapingTransformStream } from './escaping.js'
 import { concatReadableStreams } from './readableStream.js'
+import type { TagName } from './tagName.js'
 import { trusted, type PossiblyTrusted } from './trust.js'
 import {
   isVoidElementTagName,

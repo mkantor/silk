@@ -1,5 +1,5 @@
 import { voidHtmlTags, type VoidHtmlTags } from 'html-tags'
-import type { TagName } from './attributes.js'
+import type { TagName } from './tagName.js'
 
 export type VoidElementTagName = VoidHtmlTags
 
