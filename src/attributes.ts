@@ -7,7 +7,7 @@ import { readableStreamFromIterable } from './readableStream.js'
  * Depending on the attribute, the value must ultimately be either a string or a
  * boolean. Attribute values may be deferred via `Promise`s and async iterables.
  */
-export type PossiblyDeferredAttributesByTagName = {
+export type AttributesByTagName = {
   readonly [SpecificTagName in keyof HTMLElements<{}>]: {
     readonly [AttributeName in keyof HTMLElements<{}>[SpecificTagName]]: AllowAttributeValueDeferment<
       FixUpAttributeValue<HTMLElements<{}>[SpecificTagName][AttributeName]>
@@ -15,8 +15,12 @@ export type PossiblyDeferredAttributesByTagName = {
   }
 }
 
-export const possiblyDeferredAttributesToHTMLTokenStream = (
-  attributes: UnknownPossiblyDeferredAttributes,
+/**
+ * The returned `ReadableStream` will emit an error if any attributes are
+ * invalid.
+ */
+export const attributesToHTMLTokenStream = (
+  attributes: UnknownAttributes,
 ): ReadableStream<AttributeHTMLToken> =>
   readableStreamFromIterable(Object.entries(attributes)).pipeThrough(
     new TransformStream({
@@ -82,7 +86,7 @@ type AllowAttributeValueDeferment<AttributeValue> =
       ? Promise<AttributeValue>
       : never)
 
-type UnknownPossiblyDeferredAttributes = {
+type UnknownAttributes = {
   readonly [attributeName: string]:
     | string
     | boolean
