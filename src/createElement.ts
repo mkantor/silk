@@ -92,7 +92,10 @@ type CreateFragmentParameters = readonly [
   // With standard configuration this will be `createElement` itself.
   component: (...parameters: never) => unknown,
   attributes: null,
-  ...children: readonly PossiblyDeferredHTML[],
+  ...children: readonly (
+    | PossiblyDeferredHTML
+    | readonly PossiblyDeferredHTML[]
+  )[],
 ]
 
 const escapeAsNeeded = (element: PossiblyDeferredHTML): ReadableHTMLStream => {
