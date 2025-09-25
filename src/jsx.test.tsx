@@ -87,6 +87,37 @@ suite('jsx', _ => {
       ['<div', '>', 'a', 'b', 'c', '</div>'],
     ))
 
+  test('element with nested children', async _ =>
+    assert.deepEqual(
+      await asArrayOfHTMLFragments(
+        <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <title></title>
+          </head>
+          <body></body>
+        </html>,
+      ),
+      [
+        '<html',
+        ' lang="en"',
+        '>',
+        '<head',
+        '>',
+        '<meta',
+        ' charset="utf-8"',
+        '>',
+        '<title',
+        '>',
+        '</title>',
+        '</head>',
+        '<body',
+        '>',
+        '</body>',
+        '</html>',
+      ],
+    ))
+
   test('element with style attribute', async _ => {
     assert.deepEqual(
       await asArrayOfHTMLFragments(<div style="color: red"></div>),
