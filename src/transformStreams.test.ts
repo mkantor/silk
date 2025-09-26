@@ -57,7 +57,9 @@ suite('transform streams', _ => {
           { kind: 'text', text: 'b' },
           { kind: 'text', text: 'c' },
           { kind: 'closingTag' },
-        ]).pipeThrough(new HTMLSerializingTransformStream()),
+        ]).pipeThrough(
+          new HTMLSerializingTransformStream({ includeDoctype: false }),
+        ),
       ),
       [
         '<a',
@@ -70,6 +72,18 @@ suite('transform streams', _ => {
         'c',
         '</a>',
       ],
+    )
+    assert.deepEqual(
+      await arrayFromAsync(
+        readableStreamFromIterable([
+          { kind: 'startOfOpeningTag', tagName: 'html' },
+          { kind: 'endOfOpeningTag' },
+          { kind: 'closingTag' },
+        ]).pipeThrough(
+          new HTMLSerializingTransformStream({ includeDoctype: true }),
+        ),
+      ),
+      ['<!doctype html>', '<html', '>', '</html>'],
     )
   })
 })

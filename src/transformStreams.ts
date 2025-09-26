@@ -28,8 +28,13 @@ export class HTMLSerializingTransformStream extends TransformStream<
   // In a valid stream this will be overwritten before it's used, but we need
   // some initial value.
   #tagStack: TagName[] = []
-  constructor() {
+  constructor(options: { readonly includeDoctype: boolean }) {
     super({
+      start: controller => {
+        if (options.includeDoctype) {
+          controller.enqueue('<!doctype html>' as SerializedHTMLFragment)
+        }
+      },
       transform: (chunk, controller) => {
         if (chunk.kind === 'startOfOpeningTag') {
           this.#tagStack.push(chunk.tagName)
