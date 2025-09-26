@@ -13,6 +13,7 @@
   "files": [
     "dist/*"
   ],
+  "license": "MIT",
   "main": "dist/index.js",
   "repository": "github:mkantor/silk",
   "scripts": {
