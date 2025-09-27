@@ -12,11 +12,16 @@ export const concatReadableStreams = <T>(
         value: undefined,
       }
       while (nextResult.done && currentIterator !== undefined) {
-        nextResult = await currentIterator.next()
-        if (nextResult.done) {
-          // Try again with the next stream.
-          currentIndex = currentIndex + 1
-          currentIterator = streams[currentIndex]?.[Symbol.asyncIterator]()
+        try {
+          nextResult = await currentIterator.next()
+          if (nextResult.done) {
+            // Try again with the next stream.
+            currentIndex = currentIndex + 1
+            currentIterator = streams[currentIndex]?.[Symbol.asyncIterator]()
+          }
+        } catch (error) {
+          controller.error(error)
+          return
         }
       }
 
