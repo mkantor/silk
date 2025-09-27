@@ -35,8 +35,8 @@ export const concatReadableStreams = <T>(
 }
 
 export const readableStreamFromChunk = <R>(
-  chunk: R | Promise<R>,
-): ReadableStream<R> =>
+  chunk: R,
+): ReadableStream<Awaited<R>> =>
   new ReadableStream({
     pull: async controller => {
       try {
@@ -51,7 +51,7 @@ export const readableStreamFromChunk = <R>(
 
 // TODO: Adopt `ReadableStream.from`.
 export const readableStreamFromIterable = <R>(
-  iterable: Iterable<R> | AsyncIterable<R>,
+  iterable: AsyncIterable<R> | Iterable<R>,
 ): ReadableStream<R> => {
   const iterator =
     Symbol.asyncIterator in iterable
