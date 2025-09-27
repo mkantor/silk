@@ -25,9 +25,7 @@ export class HTMLSerializingTransformStream extends TransformStream<
   HTMLToken,
   SerializedHTMLFragment
 > {
-  // In a valid stream this will be overwritten before it's used, but we need
-  // some initial value.
-  #tagStack: TagName[] = []
+  #mutableTagStack: TagName[] = []
   constructor(options: { readonly includeDoctype: boolean }) {
     super({
       start: controller => {
@@ -37,14 +35,14 @@ export class HTMLSerializingTransformStream extends TransformStream<
       },
       transform: (chunk, controller) => {
         if (chunk.kind === 'startOfOpeningTag') {
-          this.#tagStack.push(chunk.tagName)
+          this.#mutableTagStack.push(chunk.tagName)
         }
         const htmlFragment = htmlTokenToHTMLFragment(
           chunk,
-          this.#tagStack[this.#tagStack.length - 1],
+          this.#mutableTagStack[this.#mutableTagStack.length - 1],
         )
         if (chunk.kind === 'closingTag') {
-          this.#tagStack.pop()
+          this.#mutableTagStack.pop()
         }
         if (htmlFragment !== '') {
           controller.enqueue(htmlFragment)
