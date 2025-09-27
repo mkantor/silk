@@ -7,6 +7,7 @@ import {
   concatReadableStreams,
   readableStreamFromChunk,
   readableStreamFromIterable,
+  readableStreamFromPromise,
 } from './readableStream.js'
 import type { TagName } from './tagName.js'
 import { TextCapturingTransformStream } from './transformStreams.js'
@@ -81,8 +82,9 @@ type CreateFragmentParameters = readonly [
 type Child =
   | string
   | Promise<string>
+  | Promise<ReadableHTMLTokenStream>
   | AsyncIterable<string>
-  | AsyncIterable<HTMLToken>
+  | ReadableHTMLTokenStream
 
 const childToReadableHTMLTokenStream = (
   child: Child,
@@ -90,7 +92,9 @@ const childToReadableHTMLTokenStream = (
   let stream =
     typeof child === 'object' && Symbol.asyncIterator in child
       ? readableStreamFromIterable<HTMLToken | string>(child)
-      : readableStreamFromChunk(child)
+      : typeof child === 'string'
+      ? readableStreamFromChunk(child)
+      : readableStreamFromPromise<HTMLToken | string>(child)
 
   return stream.pipeThrough(new TextCapturingTransformStream())
 }

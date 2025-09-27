@@ -103,6 +103,14 @@ suite('createElement', _ => {
       ),
       ['<div', '>', '&lt;&amp;&gt;', '</div>'],
     ))
+
+  test('promise of stream content', async _ =>
+    assert.deepEqual(
+      await asArrayOfHTMLFragments(
+        createElement('div', {}, Promise.resolve(createElement('div', {}))),
+      ),
+      ['<div', '>', '<div', '>', '</div>', '</div>'],
+    ))
 })
 
 // Type-level tests:

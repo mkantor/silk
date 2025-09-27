@@ -1,3 +1,5 @@
+import type { Primitive } from './utilityTypes.js'
+
 export const concatReadableStreams = <T>(
   streams: readonly ReadableStream<T>[],
 ): ReadableStream<T> => {
@@ -33,6 +35,45 @@ export const concatReadableStreams = <T>(
     },
   })
 }
+
+export const readableStreamFromPromise = <R>(
+  promise: Promise<R & Primitive> | Promise<HasDefaultReader<R>>,
+): ReadableStream<R> =>
+  new ReadableStream({
+    start: async controller => {
+      try {
+        const possiblyReadable = await promise
+        if (
+          typeof possiblyReadable === 'object' &&
+          possiblyReadable !== null &&
+          'getReader' in possiblyReadable
+        ) {
+          const reader = possiblyReadable.getReader()
+
+          // Forward data from the resolved stream.
+          const pump = () =>
+            reader
+              .read()
+              .then(({ value, done }) => {
+                if (done) {
+                  controller.close()
+                } else {
+                  controller.enqueue(value)
+                  pump()
+                }
+              })
+              .catch(controller.error)
+
+          pump()
+        } else {
+          controller.enqueue(possiblyReadable)
+          controller.close()
+        }
+      } catch (error) {
+        controller.error(error)
+      }
+    },
+  })
 
 export const readableStreamFromChunk = <R>(
   chunk: R,
@@ -71,4 +112,8 @@ export const readableStreamFromIterable = <R>(
       }
     },
   })
+}
+
+type HasDefaultReader<R> = {
+  readonly getReader: () => ReadableStreamDefaultReader<R>
 }
