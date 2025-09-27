@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLElements, ValueSets } from '@michijs/htmltype'
 import type { HTMLToken } from './htmlToken.js'
 import { readableStreamFromIterable } from './readableStream.js'
+import type { Primitive } from './utilityTypes.js'
 
 /**
  * Attribute values are specifically-typed based on the tag and attribute name.
@@ -94,8 +95,6 @@ type UnknownAttributes = {
     | Promise<string>
     | AsyncIterable<string>
 }
-
-type Primitive = string | number | bigint | boolean | symbol | null | undefined
 
 /**
  * Throws an error if the attribute name is malformed or if the value has an

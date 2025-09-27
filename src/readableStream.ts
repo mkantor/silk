@@ -1,3 +1,5 @@
+import type { Primitive } from './utilityTypes.js'
+
 export const concatReadableStreams = <T>(
   streams: readonly ReadableStream<T>[],
 ): ReadableStream<T> => {
@@ -12,11 +14,16 @@ export const concatReadableStreams = <T>(
         value: undefined,
       }
       while (nextResult.done && currentIterator !== undefined) {
-        nextResult = await currentIterator.next()
-        if (nextResult.done) {
-          // Try again with the next stream.
-          currentIndex = currentIndex + 1
-          currentIterator = streams[currentIndex]?.[Symbol.asyncIterator]()
+        try {
+          nextResult = await currentIterator.next()
+          if (nextResult.done) {
+            // Try again with the next stream.
+            currentIndex = currentIndex + 1
+            currentIterator = streams[currentIndex]?.[Symbol.asyncIterator]()
+          }
+        } catch (error) {
+          controller.error(error)
+          return
         }
       }
 
@@ -29,9 +36,48 @@ export const concatReadableStreams = <T>(
   })
 }
 
-export const readableStreamFromChunk = <R>(
-  chunk: R | Promise<R>,
+export const readableStreamFromPromise = <R>(
+  promise: Promise<R & Primitive> | Promise<HasDefaultReader<R>>,
 ): ReadableStream<R> =>
+  new ReadableStream({
+    start: async controller => {
+      try {
+        const possiblyReadable = await promise
+        if (
+          typeof possiblyReadable === 'object' &&
+          possiblyReadable !== null &&
+          'getReader' in possiblyReadable
+        ) {
+          const reader = possiblyReadable.getReader()
+
+          // Forward data from the resolved stream.
+          const pump = () =>
+            reader
+              .read()
+              .then(({ value, done }) => {
+                if (done) {
+                  controller.close()
+                } else {
+                  controller.enqueue(value)
+                  pump()
+                }
+              })
+              .catch(controller.error)
+
+          pump()
+        } else {
+          controller.enqueue(possiblyReadable)
+          controller.close()
+        }
+      } catch (error) {
+        controller.error(error)
+      }
+    },
+  })
+
+export const readableStreamFromChunk = <R>(
+  chunk: R,
+): ReadableStream<Awaited<R>> =>
   new ReadableStream({
     pull: async controller => {
       try {
@@ -46,7 +92,7 @@ export const readableStreamFromChunk = <R>(
 
 // TODO: Adopt `ReadableStream.from`.
 export const readableStreamFromIterable = <R>(
-  iterable: Iterable<R> | AsyncIterable<R>,
+  iterable: AsyncIterable<R> | Iterable<R>,
 ): ReadableStream<R> => {
   const iterator =
     Symbol.asyncIterator in iterable
@@ -66,4 +112,8 @@ export const readableStreamFromIterable = <R>(
       }
     },
   })
+}
+
+type HasDefaultReader<R> = {
+  readonly getReader: () => ReadableStreamDefaultReader<R>
 }

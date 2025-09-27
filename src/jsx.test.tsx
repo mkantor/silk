@@ -235,6 +235,12 @@ suite('jsx', _ => {
       '</div>',
     ])
   })
+
+  test('promise of stream content children', async _ =>
+    assert.deepEqual(
+      await asArrayOfHTMLFragments(<div>{Promise.resolve(<div></div>)}</div>),
+      ['<div', '>', '<div', '>', '</div>', '</div>'],
+    ))
 })
 
 // Type-level tests:
