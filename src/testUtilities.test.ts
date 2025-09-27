@@ -13,4 +13,8 @@ export const arrayFromAsync = async <T>(
 }
 
 export const asArrayOfHTMLFragments = async (source: ReadableHTMLTokenStream) =>
-  arrayFromAsync(source.pipeThrough(new HTMLSerializingTransformStream()))
+  arrayFromAsync(
+    source.pipeThrough(
+      new HTMLSerializingTransformStream({ includeDoctype: false }),
+    ),
+  )
