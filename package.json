@@ -1,6 +1,6 @@
 {
   "name": "@matt.kantor/silk",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "dependencies": {
     "@michijs/htmltype": "^0.4.2",
     "html-entities": "^2.6.0",
