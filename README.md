@@ -27,8 +27,8 @@ const slowlyGetPlanet = (): Promise<ReadableHTMLTokenStream> =>
 ```
 
 The HTML structure and content before the `slowlyGetPlanet` call will
-immediately be readable from the `content` stream, while the rest will appear as
-soon as the `Promise` returned by `slowlyGetPlanet` resolves.
+immediately be readable from the `document` stream, while the rest will appear
+as soon as the `Promise` returned by `slowlyGetPlanet` resolves.
 
 You can consume the resulting stream however you want, but if you're using Silk
 for server-side rendering and want a stream that you can pipe out as the HTTP
