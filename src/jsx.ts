@@ -17,7 +17,9 @@ export declare namespace createElement.JSX {
     }
 
   type IntrinsicElements = {
-    readonly [SpecificTagName in TagName]: HTML<SpecificTagName>
+    // Using `keyof AttributesByTagName` rather than `TagName` here is necessary
+    // to maintain documentation in type info.
+    readonly [SpecificTagName in keyof AttributesByTagName]: HTML<SpecificTagName>
   }
 
   type ElementChildrenAttribute = {
