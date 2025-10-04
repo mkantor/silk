@@ -90,6 +90,12 @@ If you run that and make a request to it from a web browser, you'll see "Hello,
 " appear quickly, then "world!" appear after two seconds. You can [try it out on
 StackBlitz][silk-example-server-stackblitz].
 
+## Client-Side Usage
+
+Silk can also be used client-side by translating the stream of
+[`HTMLToken`s][html-tokens] into DOM method calls. You can [see a complete
+example of this on StackBlitz][silk-example-client-stackblitz].
+
 [^1]: `"jsx": "react"` may seem odd because Silk isn't related to React, but
 TypeScript's JSX configuration is based around React's semantics.
 
@@ -99,3 +105,4 @@ TypeScript's JSX configuration is based around React's semantics.
 [html-tokens]: ./src/htmlToken.ts
 [npm-package]: https://www.npmjs.com/package/@matt.kantor/silk
 [silk-example-server-stackblitz]: https://stackblitz.com/edit/silk-example-server?file=src%2Findex.tsx
+[silk-example-client-stackblitz]: https://stackblitz.com/edit/silk-example-client?file=src%2Findex.tsx,index.html
