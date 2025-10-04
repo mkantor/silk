@@ -9,7 +9,7 @@ Child nodes and attributes can be async values or streams.
 Here's an example:
 
 ```tsx
-import { createElement } from '@matt.kantor/silk';
+import { createElement } from '@matt.kantor/silk'
 
 const document = (
   <html lang="en">
@@ -18,12 +18,12 @@ const document = (
     </head>
     <body>Hello, {slowlyGetPlanet()}!</body>
   </html>
-);
+)
 
 const slowlyGetPlanet = (): Promise<ReadableHTMLTokenStream> =>
-  new Promise((resolve) =>
-    setTimeout(() => resolve(<strong>world</strong>), 2000)
-  );
+  new Promise(resolve =>
+    setTimeout(() => resolve(<strong>world</strong>), 2000),
+  )
 ```
 
 The HTML structure and content before the `slowlyGetPlanet` call will
@@ -49,15 +49,15 @@ pipe out as the HTTP response, `HTMLSerializingTransformStream` has you covered.
 Here's a complete HTTP server which uses Silk to serve a web page:
 
 ```tsx
-import { createServer } from 'node:http';
-import { Writable } from 'node:stream';
+import { createServer } from 'node:http'
+import { Writable } from 'node:stream'
 import {
   type ReadableHTMLTokenStream,
   createElement,
   HTMLSerializingTransformStream,
-} from '@matt.kantor/silk';
+} from '@matt.kantor/silk'
 
-const port = 80;
+const port = 80
 
 createServer(async (_request, response) => {
   const document = (
@@ -67,17 +67,23 @@ createServer(async (_request, response) => {
       </head>
       <body>Hello, {slowlyGetPlanet()}!</body>
     </html>
-  );
+  )
   const serializeHTML = new HTMLSerializingTransformStream({
     includeDoctype: true,
-  });
-  response.setHeader('Content-Type', 'text/html; charset=utf-8');
+  })
+
+  response.setHeader('Content-Type', 'text/html; charset=utf-8')
   try {
-    await document.pipeThrough(serializeHTML).pipeTo(Writable.toWeb(response));
+    await document.pipeThrough(serializeHTML).pipeTo(Writable.toWeb(response))
   } catch (error) {
-    console.error('Error while writing response:', error);
+    console.error('Error while writing response:', error)
   }
-}).listen(port);
+}).listen(port)
+
+const slowlyGetPlanet = (): Promise<ReadableHTMLTokenStream> =>
+  new Promise(resolve =>
+    setTimeout(() => resolve(<strong>world</strong>), 2000),
+  )
 ```
 
 If you run that and make a request to it from a web browser, you'll see "Hello,
