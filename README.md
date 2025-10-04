@@ -30,10 +30,23 @@ The HTML structure and content before the `slowlyGetPlanet` call will
 immediately be readable from the `document` stream, while the rest will appear
 as soon as the `Promise` returned by `slowlyGetPlanet` resolves.
 
-You can consume the resulting stream however you want, but if you're using Silk
-for server-side rendering and want a stream that you can pipe out as the HTTP
-response, `HTMLSerializingTransformStream` has you covered. Here's a complete
-HTTP server which uses Silk to serve a web page:
+## Setup
+
+To use Silk, add these options to your `tsconfig.json`[^1]:
+```json
+"jsx": "react",
+"jsxFactory": "createElement",
+"jsxFragmentFactory": "createElement",
+```
+
+Also, add `import { createElement } from '@matt.kantor/silk'` to each of your
+`.tsx` files.
+
+## Server-Side Usage
+
+If you're using Silk for server-side rendering and want a stream that you can
+pipe out as the HTTP response, `HTMLSerializingTransformStream` has you covered.
+Here's a complete HTTP server which uses Silk to serve a web page:
 
 ```tsx
 import { createServer } from 'node:http';
@@ -70,6 +83,9 @@ createServer(async (_request, response) => {
 If you run that and make a request to it from a web browser, you'll see "Hello,
 " appear quickly, then "world!" appear after two seconds. You can [try it out on
 StackBlitz][silk-example-server-stackblitz].
+
+[^1]: `"jsx": "react"` may seem odd because Silk isn't related to React, but
+TypeScript's JSX configuration is based around React's semantics.
 
 [jsx]: https://facebook.github.io/jsx/
 [readable-stream]: https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
