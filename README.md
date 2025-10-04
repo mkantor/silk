@@ -9,7 +9,7 @@ Child nodes and attributes can be async values or streams.
 Here's an example:
 
 ```tsx
-import { createElement } from '@matt.kantor/silk';
+import { createElement } from '@matt.kantor/silk'
 
 const document = (
   <html lang="en">
@@ -18,33 +18,46 @@ const document = (
     </head>
     <body>Hello, {slowlyGetPlanet()}!</body>
   </html>
-);
+)
 
 const slowlyGetPlanet = (): Promise<ReadableHTMLTokenStream> =>
-  new Promise((resolve) =>
-    setTimeout(() => resolve(<strong>world</strong>), 2000)
-  );
+  new Promise(resolve =>
+    setTimeout(() => resolve(<strong>world</strong>), 2000),
+  )
 ```
 
 The HTML structure and content before the `slowlyGetPlanet` call will
 immediately be readable from the `document` stream, while the rest will appear
 as soon as the `Promise` returned by `slowlyGetPlanet` resolves.
 
-You can consume the resulting stream however you want, but if you're using Silk
-for server-side rendering and want a stream that you can pipe out as the HTTP
-response, `HTMLSerializingTransformStream` has you covered. Here's a complete
-HTTP server which uses Silk to serve a web page:
+## Setup
+
+To use Silk, add these options to your `tsconfig.json`[^1]:
+```json
+"jsx": "react",
+"jsxFactory": "createElement",
+"jsxFragmentFactory": "createElement",
+```
+
+Also, add `import { createElement } from '@matt.kantor/silk'` to each of your
+`.tsx` files.
+
+## Server-Side Usage
+
+If you're using Silk for server-side rendering and want a stream that you can
+pipe out as the HTTP response, `HTMLSerializingTransformStream` has you covered.
+Here's a complete HTTP server which uses Silk to serve a web page:
 
 ```tsx
-import { createServer } from 'node:http';
-import { Writable } from 'node:stream';
+import { createServer } from 'node:http'
+import { Writable } from 'node:stream'
 import {
   type ReadableHTMLTokenStream,
   createElement,
   HTMLSerializingTransformStream,
-} from '@matt.kantor/silk';
+} from '@matt.kantor/silk'
 
-const port = 80;
+const port = 80
 
 createServer(async (_request, response) => {
   const document = (
@@ -54,22 +67,37 @@ createServer(async (_request, response) => {
       </head>
       <body>Hello, {slowlyGetPlanet()}!</body>
     </html>
-  );
+  )
   const serializeHTML = new HTMLSerializingTransformStream({
     includeDoctype: true,
-  });
-  response.setHeader('Content-Type', 'text/html; charset=utf-8');
+  })
+
+  response.setHeader('Content-Type', 'text/html; charset=utf-8')
   try {
-    await document.pipeThrough(serializeHTML).pipeTo(Writable.toWeb(response));
+    await document.pipeThrough(serializeHTML).pipeTo(Writable.toWeb(response))
   } catch (error) {
-    console.error('Error while writing response:', error);
+    console.error('Error while writing response:', error)
   }
-}).listen(port);
+}).listen(port)
+
+const slowlyGetPlanet = (): Promise<ReadableHTMLTokenStream> =>
+  new Promise(resolve =>
+    setTimeout(() => resolve(<strong>world</strong>), 2000),
+  )
 ```
 
 If you run that and make a request to it from a web browser, you'll see "Hello,
 " appear quickly, then "world!" appear after two seconds. You can [try it out on
 StackBlitz][silk-example-server-stackblitz].
+
+## Client-Side Usage
+
+Silk can also be used client-side by translating the stream of
+[`HTMLToken`s][html-tokens] into DOM method calls. You can [see a complete
+example of this on StackBlitz][silk-example-client-stackblitz].
+
+[^1]: `"jsx": "react"` may seem odd because Silk isn't related to React, but
+TypeScript's JSX configuration is based around React's semantics.
 
 [jsx]: https://facebook.github.io/jsx/
 [readable-stream]: https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
@@ -77,3 +105,4 @@ StackBlitz][silk-example-server-stackblitz].
 [html-tokens]: ./src/htmlToken.ts
 [npm-package]: https://www.npmjs.com/package/@matt.kantor/silk
 [silk-example-server-stackblitz]: https://stackblitz.com/edit/silk-example-server?file=src%2Findex.tsx
+[silk-example-client-stackblitz]: https://stackblitz.com/edit/silk-example-client?file=src%2Findex.tsx,index.html
