@@ -96,6 +96,18 @@ Silk can also be used client-side by translating the stream of
 [`HTMLToken`s][html-tokens] into DOM method calls. You can [see a complete
 example of this on StackBlitz][silk-example-client-stackblitz].
 
+## Why?
+
+HTML is inherently streamable, yet many JavaScript web servers buffer the entire
+response body before sending a single byte of it to the client. This leaves
+performance on the table—web browsers are perfectly capable of incrementally
+parsing and rendering partial HTML documents as they arrive.
+
+Streaming is especially valuable when the document references external resources
+(e.g. stylesheets). By sending HTML to the client while the server continues
+asynchronous work, the browser can fetch those resources concurrently with that
+work, significantly reducing the time required to display the page.
+
 [^1]: `"jsx": "react"` may seem odd because Silk isn't related to React, but
 TypeScript's JSX configuration is based around React's semantics.
 
