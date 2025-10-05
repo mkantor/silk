@@ -9,10 +9,24 @@ import type { Primitive } from './utilityTypes.js'
  * boolean. Attribute values may be deferred via `Promise`s and async iterables.
  */
 export type AttributesByTagName = {
+  // Map over each attribute from @michijs/htmltype to apply some
+  // simplifications and allow attribute values to be deferred.
   readonly [SpecificTagName in keyof HTMLElements<{}>]: {
-    readonly [AttributeName in keyof HTMLElements<{}>[SpecificTagName]]: AllowAttributeValueDeferment<
-      FixUpAttributeValue<HTMLElements<{}>[SpecificTagName][AttributeName]>
-    >
+    readonly [AttributeName in keyof HTMLElements<{}>[SpecificTagName]]: FixUpAttributeValue<
+      HTMLElements<{}>[SpecificTagName][AttributeName]
+    > extends infer AttributeValue
+      ?
+          | AttributeValue
+          // If it's a string, allow deferment by wrapping in a `Promise` or by
+          // using an async iterable of substrings.
+          | ([AttributeValue] extends [string]
+              ? Promise<AttributeValue> | AsyncIterable<string>
+              : // If it's boolean, allow deferment wrapping in a `Promise` (an
+              // iterable doesn't make sense; a boolean is just a single value).
+              [AttributeValue] extends [boolean]
+              ? Promise<AttributeValue>
+              : never)
+      : never
   }
 }
 
@@ -74,18 +88,6 @@ type FixUpAttributeValue<AttributeValue> =
           : AttributeValue,
         string | boolean
       >
-
-type AllowAttributeValueDeferment<AttributeValue> =
-  | AttributeValue
-  // If it's a string, allow deferment by wrapping in a `Promise` or by using an
-  // async iterable of substrings.
-  | ([AttributeValue] extends [string]
-      ? Promise<AttributeValue> | AsyncIterable<string>
-      : // If it's boolean, allow deferment wrapping in a `Promise` (an iterable
-      // doesn't make sense; a boolean is just a single value).
-      [AttributeValue] extends [boolean]
-      ? Promise<AttributeValue>
-      : never)
 
 type UnknownAttributes = {
   readonly [attributeName: string]:
