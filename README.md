@@ -59,7 +59,7 @@ import {
 
 const port = 80
 
-createServer(async (_request, response) => {
+createServer((_request, response) => {
   const document = (
     <html lang="en">
       <head>
@@ -68,16 +68,16 @@ createServer(async (_request, response) => {
       <body>Hello, {slowlyGetPlanet()}!</body>
     </html>
   )
-  const serializeHTML = new HTMLSerializingTransformStream({
-    includeDoctype: true,
-  })
 
   response.setHeader('Content-Type', 'text/html; charset=utf-8')
-  try {
-    await document.pipeThrough(serializeHTML).pipeTo(Writable.toWeb(response))
-  } catch (error) {
-    console.error('Error while writing response:', error)
-  }
+  document
+    .pipeThrough(
+      new HTMLSerializingTransformStream({
+        includeDoctype: true,
+      }),
+    )
+    .pipeTo(Writable.toWeb(response))
+    .catch(console.error)
 }).listen(port)
 
 const slowlyGetPlanet = (): Promise<ReadableHTMLTokenStream> =>
