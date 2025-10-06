@@ -1,7 +1,11 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
+import type { ReadableHTMLTokenStream } from './createElement.js'
 import { createElement } from './jsx.js'
-import { readableStreamFromChunk } from './readableStream.js'
+import {
+  readableStreamFromChunk,
+  readableStreamFromIterable,
+} from './readableStream.js'
 import { asArrayOfHTMLFragments } from './testUtilities.test.js'
 
 suite('jsx', _ => {
@@ -236,10 +240,20 @@ suite('jsx', _ => {
     ])
   })
 
-  test('promise of stream content children', async _ =>
+  test('promise of token stream content', async _ =>
     assert.deepEqual(
       await asArrayOfHTMLFragments(<div>{Promise.resolve(<div></div>)}</div>),
       ['<div', '>', '<div', '>', '</div>', '</div>'],
+    ))
+
+  test('promise of string stream content', async _ =>
+    assert.deepEqual(
+      await asArrayOfHTMLFragments(
+        <div>
+          {Promise.resolve(readableStreamFromIterable(['a', '<&>', 'b']))}
+        </div>,
+      ),
+      ['<div', '>', 'a', '&lt;&amp;&gt;', 'b', '</div>'],
     ))
 })
 
@@ -294,4 +308,23 @@ try {
   // <https://github.com/microsoft/TypeScript/issues/32447>), so this is not a
   // type error.
   ;<a non-existent-attribute={() => '☹️'}></a>
+  ;<div>
+    // These should all be legal:
+    {
+      Promise.resolve('') as
+        | Promise<string>
+        | Promise<ReadableStream<string>>
+        | Promise<ReadableHTMLTokenStream>
+    }
+    {
+      Promise.resolve('') as Promise<
+        string | ReadableStream<string> | ReadableHTMLTokenStream
+      >
+    }
+    {
+      Promise.resolve('') as
+        | Promise<ReadableHTMLTokenStream>
+        | Promise<string | ReadableStream<string>>
+    }
+  </div>
 } catch (_) {}
