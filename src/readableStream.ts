@@ -37,7 +37,7 @@ export const concatReadableStreams = <T>(
 }
 
 export const readableStreamFromPromise = <R>(
-  promise: Promise<R & Primitive> | Promise<HasDefaultReader<R>>,
+  promise: Promise<(R & Primitive) | HasDefaultReader<R>>,
 ): ReadableStream<R> =>
   new ReadableStream({
     start: async controller => {

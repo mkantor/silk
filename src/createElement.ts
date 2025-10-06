@@ -81,8 +81,7 @@ type CreateFragmentParameters = readonly [
 
 type Child =
   | string
-  | Promise<string>
-  | Promise<ReadableHTMLTokenStream>
+  | Promise<string | ReadableStream<string> | ReadableHTMLTokenStream>
   | AsyncIterable<string>
   | ReadableHTMLTokenStream
 
