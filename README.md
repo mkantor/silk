@@ -2,7 +2,7 @@
 
 Silk is an embedded DSL for authoring HTML from TypeScript. You write simple
 typed [JSX][jsx] and Silk generates [`ReadableStream`s][readable-stream] of
-[`HTMLToken`s][html-tokens]. You can [get Silk from npm][npm-package].
+[`HTMLToken`s][html-tokens].
 
 Child nodes and attributes can be async values or streams.
 
