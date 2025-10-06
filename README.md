@@ -2,7 +2,7 @@
 
 Silk is an embedded DSL for authoring HTML from TypeScript. You write simple
 typed [JSX][jsx] and Silk generates [`ReadableStream`s][readable-stream] of
-[`HTMLToken`s][html-tokens]. You can [get Silk from npm][npm-package].
+[`HTMLToken`s][html-tokens].
 
 Child nodes and attributes can be async values or streams.
 
@@ -39,14 +39,14 @@ To use Silk, add these options to your `tsconfig.json`[^1]:
 "jsxFragmentFactory": "createElement",
 ```
 
-Also, add `import { createElement } from '@matt.kantor/silk'` to each of your
-`.tsx` files.
+Also, `import { createElement } from '@matt.kantor/silk'` in each of your `.tsx`
+files.
 
 ## Server-Side Usage
 
-If you're using Silk for server-side rendering and want a stream that you can
-pipe out as the HTTP response, `HTMLSerializingTransformStream` has you covered.
-Here's a complete HTTP server which uses Silk to serve a web page:
+If you're using Silk for server-side rendering and want a stream to pipe out as
+the HTTP response, `HTMLSerializingTransformStream` has you covered. Here's an
+example of an HTTP server which uses Silk to serve a web page:
 
 ```tsx
 import { createServer } from 'node:http'
@@ -87,7 +87,7 @@ const slowlyGetPlanet = (): Promise<ReadableHTMLTokenStream> =>
 ```
 
 If you run that and make a request to it from a web browser, you'll see "Hello,
-" appear quickly, then "world!" appear after two seconds. You can [try it out on
+" appear quickly, then "world!" appear after two seconds. You can [try it on
 StackBlitz][silk-example-server-stackblitz].
 
 ## Client-Side Usage
