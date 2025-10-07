@@ -98,15 +98,18 @@ example of this on StackBlitz][silk-example-client-stackblitz].
 
 ## Why?
 
-HTML is inherently streamable, yet many JavaScript web servers buffer the entire
-response body before sending a single byte of it to the client. This leaves
-performance on the table—web browsers are perfectly capable of incrementally
-parsing and rendering partial HTML documents as they arrive.
+HTML is inherently streamable, yet many web servers buffer the entire response
+body before sending a single byte of it to the client. This leaves performance
+on the table—web browsers are perfectly capable of incrementally parsing and
+rendering partial HTML documents as they arrive.
 
 Streaming is especially valuable when the document references external resources
 (e.g. stylesheets). By sending HTML to the client while the server continues
 asynchronous work, the browser can fetch those resources concurrently with that
 work, significantly reducing the time required to display the page.
+
+Streaming also helps keep server memory utilization low as data already sent to
+the client can be freed.
 
 [^1]: `"jsx": "react"` may seem odd because Silk isn't related to React, but
 TypeScript's JSX configuration is based around React's semantics.
