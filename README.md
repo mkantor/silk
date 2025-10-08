@@ -135,7 +135,10 @@ JSX elements are strictly-typed, with each element only accepting its known
 attributes, attributes only accepting known values, and [void
 elements][void-elements] forbidding children. Tag names and attributes are
 suggested in completions, and documentation from [MDN][mdn] is presented in type
-info.
+info:
+
+![Screenshot of type info for a JSX
+element](./media/element-type-info-screenshot.png)
 
 [^1]: `"jsx": "react"` may seem odd because Silk isn't related to React, but
 TypeScript's JSX configuration is based around React's semantics.
