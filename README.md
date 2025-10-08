@@ -96,7 +96,7 @@ Silk can also be used client-side by translating the stream of
 [`HTMLToken`s][html-tokens] into DOM method calls. You can [see a complete
 example of this on StackBlitz][silk-example-client-stackblitz].
 
-## Why?
+## Why Streaming?
 
 HTML is inherently streamable, yet many web servers buffer the entire response
 body before sending a single byte of it to the client. This leaves performance
@@ -111,6 +111,32 @@ work, significantly reducing the time required to display the page.
 Streaming also helps keep server memory utilization low as data already sent to
 the client can be freed.
 
+## It's Just HTML
+
+### Attributes
+
+There are no non-HTML attributes (like `ref` and `key`), attribute names are
+always spelled exactly as they are in HTML (e.g. `class` is not `className`),
+and attribute values are plain strings.
+
+### Components
+
+Silk doesn't have "components" as part of its JSX syntax—all elements are
+intrinsic. If you want to abstract/reuse bits of HTML, you can call functions
+from within `{…}` blocks:
+
+```tsx
+<div>{profile(userID)}</div>
+```
+
+### Typing
+
+JSX elements are strictly-typed, with each element only accepting its known
+attributes, attributes only accepting known values, and [void
+elements][void-elements] forbidding children. Tag names and attributes are
+suggested in completions, and documentation from [MDN][mdn] is presented in type
+info.
+
 [^1]: `"jsx": "react"` may seem odd because Silk isn't related to React, but
 TypeScript's JSX configuration is based around React's semantics.
 
@@ -120,4 +146,5 @@ TypeScript's JSX configuration is based around React's semantics.
 [html-tokens]: ./src/htmlToken.ts
 [npm-package]: https://www.npmjs.com/package/@matt.kantor/silk
 [silk-example-server-stackblitz]: https://stackblitz.com/edit/silk-example-server?file=src%2Findex.tsx
-[silk-example-client-stackblitz]: https://stackblitz.com/edit/silk-example-client?file=src%2Findex.tsx,index.html
+[silk-example-client-stackblitz]: https://stackblitz.com/edit/silk-example-client?file=index.html,src%2Findex.tsx
+[void-elements]: https://html.spec.whatwg.org/#void-elements
