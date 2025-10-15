@@ -1,4 +1,5 @@
 export type { ReadableHTMLTokenStream } from './createElement.js'
+export type { HTMLToken } from './htmlToken.js'
 export { createElement } from './jsx.js'
 export {
   HTMLSerializingTransformStream,
