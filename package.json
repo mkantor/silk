@@ -1,5 +1,5 @@
 {
-  "name": "@matt.kantor/silk",
+  "name": "@superhighway/silk",
   "version": "0.1.2",
   "dependencies": {
     "@michijs/htmltype": "^0.4.2",
