@@ -90,6 +90,9 @@ If you run that and make a request to it from a web browser, you'll see "Hello,
 " appear quickly, then "world!" appear after two seconds. You can [try it on
 StackBlitz][silk-example-server-stackblitz].
 
+For a somewhat more featureful web server to use with Silk, see [Loom][loom],
+and for more elaborate examples, see <https://github.com/mkantor/silk-demos>.
+
 ## Client-Side Usage
 
 Silk can also be used client-side by translating the stream of
@@ -144,6 +147,7 @@ element](./media/element-type-info-screenshot.png)
 TypeScript's JSX configuration is based around React's semantics.
 
 [jsx]: https://facebook.github.io/jsx/
+[loom]: https://github.com/mkantor/loom
 [readable-stream]: https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
 [mdn]: https://developer.mozilla.org/
 [html-tokens]: ./src/htmlToken.ts
