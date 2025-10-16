@@ -9,9 +9,15 @@ Child nodes and attributes can be async values or streams.
 Here's an example:
 
 ```tsx
-import { createElement } from '@superhighway/silk'
+import { createElement, type ReadableHTMLTokenStream } from '@superhighway/silk'
 
-const document = (
+const slowlyGetPlanet = () =>
+  // Imagine this queries a database or some third-party API.
+  new Promise<ReadableHTMLTokenStream>(resolve =>
+    setTimeout(() => resolve(<strong>world</strong>), 2000),
+  )
+
+export default () => (
   <html lang="en">
     <head>
       <title>Greeting</title>
@@ -19,16 +25,11 @@ const document = (
     <body>Hello, {slowlyGetPlanet()}!</body>
   </html>
 )
-
-const slowlyGetPlanet = (): Promise<ReadableHTMLTokenStream> =>
-  new Promise(resolve =>
-    setTimeout(() => resolve(<strong>world</strong>), 2000),
-  )
 ```
 
 The HTML structure and content before the `slowlyGetPlanet` call will
-immediately be readable from the `document` stream, while the rest will appear
-as soon as the `Promise` returned by `slowlyGetPlanet` resolves.
+immediately be readable from the stream, while the rest will appear as soon as
+the `Promise` returned by `slowlyGetPlanet` resolves.
 
 ## Setup
 
@@ -80,8 +81,8 @@ createServer((_request, response) => {
     .catch(console.error)
 }).listen(port)
 
-const slowlyGetPlanet = (): Promise<ReadableHTMLTokenStream> =>
-  new Promise(resolve =>
+const slowlyGetPlanet = () =>
+  new Promise<ReadableHTMLTokenStream>(resolve =>
     setTimeout(() => resolve(<strong>world</strong>), 2000),
   )
 ```
