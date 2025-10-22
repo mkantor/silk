@@ -1,7 +1,7 @@
 import type { AttributesByTagName } from './attributes.js'
 import type {
   Children as CreateElementChildren,
-  ReadableHTMLTokenStream,
+  ReadableHTMLStream,
 } from './createElement.js'
 import type { TagName } from './tagName.js'
 
@@ -32,7 +32,7 @@ export declare namespace createElement.JSX {
   type ElementType = keyof IntrinsicElements
 
   /** The type that JSX nodes evaluate to. */
-  type Element = ReadableHTMLTokenStream
+  type Element = ReadableHTMLStream
 
   type ElementClass = never
 
