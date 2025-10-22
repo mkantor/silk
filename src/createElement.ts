@@ -1,5 +1,5 @@
 import {
-  attributesToHTMLTokenStream,
+  attributesToReadableHTMLStream,
   type AttributesByTagName,
 } from './attributes.js'
 import type { HTMLToken } from './htmlToken.js'
@@ -13,7 +13,10 @@ import type { TagName } from './tagName.js'
 import { TextCapturingTransformStream } from './transformStreams.js'
 import type { VoidElementTagName } from './voidElements.js'
 
-export type ReadableHTMLTokenStream = ReadableStream<HTMLToken>
+export type ReadableHTMLStream = ReadableStream<HTMLToken>
+
+/** @deprecated use `ReadableHTMLStream` instead */
+export type ReadableHTMLTokenStream = ReadableHTMLStream
 
 /** The type of the `...children` rest parameter of `createElement`. */
 export type Children<SpecificTagName extends TagName> =
@@ -28,7 +31,7 @@ export type Children<SpecificTagName extends TagName> =
  */
 export const createElement: (
   ...[tagName, attributes, ...children]: CreateElementParameters
-) => ReadableHTMLTokenStream = (
+) => ReadableHTMLStream = (
   // This function gets called for fragments too. Direct callers of
   // `createElement` shouldn't have to see the function parameter, so the
   // externally-visible type above excludes `CreateFragmentParameters`.
@@ -38,8 +41,8 @@ export const createElement: (
 ) => {
   const childrenAsStreams = children.map(child =>
     isReadonlyArray(child)
-      ? concatReadableStreams(child.map(childToReadableHTMLTokenStream))
-      : childToReadableHTMLTokenStream(child),
+      ? concatReadableStreams(child.map(childToReadableHTMLStream))
+      : childToReadableHTMLStream(child),
   )
 
   const streamComponents =
@@ -52,13 +55,13 @@ export const createElement: (
             kind: 'startOfOpeningTag',
             tagName: tagNameOrFragmentFunction,
           }),
-          attributesToHTMLTokenStream(attributes ?? {}),
+          attributesToReadableHTMLStream(attributes ?? {}),
           readableStreamFromChunk({ kind: 'endOfOpeningTag' }),
 
           ...childrenAsStreams,
 
           readableStreamFromChunk({ kind: 'closingTag' }),
-        ] satisfies readonly ReadableHTMLTokenStream[])
+        ] satisfies readonly ReadableHTMLStream[])
 
   return concatReadableStreams(streamComponents)
 }
@@ -81,13 +84,11 @@ type CreateFragmentParameters = readonly [
 
 type Child =
   | string
-  | Promise<string | ReadableStream<string> | ReadableHTMLTokenStream>
+  | Promise<string | ReadableStream<string> | ReadableHTMLStream>
   | AsyncIterable<string>
-  | ReadableHTMLTokenStream
+  | ReadableHTMLStream
 
-const childToReadableHTMLTokenStream = (
-  child: Child,
-): ReadableHTMLTokenStream => {
+const childToReadableHTMLStream = (child: Child): ReadableHTMLStream => {
   let stream =
     typeof child === 'object' && Symbol.asyncIterator in child
       ? readableStreamFromIterable<HTMLToken | string>(child)

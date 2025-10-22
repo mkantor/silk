@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
-import type { ReadableHTMLTokenStream } from './createElement.js'
+import type { ReadableHTMLStream } from './createElement.js'
 import { createElement } from './jsx.js'
 import {
   readableStreamFromChunk,
@@ -314,16 +314,16 @@ try {
       Promise.resolve('') as
         | Promise<string>
         | Promise<ReadableStream<string>>
-        | Promise<ReadableHTMLTokenStream>
+        | Promise<ReadableHTMLStream>
     }
     {
       Promise.resolve('') as Promise<
-        string | ReadableStream<string> | ReadableHTMLTokenStream
+        string | ReadableStream<string> | ReadableHTMLStream
       >
     }
     {
       Promise.resolve('') as
-        | Promise<ReadableHTMLTokenStream>
+        | Promise<ReadableHTMLStream>
         | Promise<string | ReadableStream<string>>
     }
   </div>

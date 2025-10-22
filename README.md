@@ -9,11 +9,11 @@ Child nodes and attributes can be async values or streams.
 Here's an example:
 
 ```tsx
-import { createElement, type ReadableHTMLTokenStream } from '@superhighway/silk'
+import { createElement, type ReadableHTMLStream } from '@superhighway/silk'
 
 const slowlyGetPlanet = () =>
   // Imagine this queries a database or some third-party API.
-  new Promise<ReadableHTMLTokenStream>(resolve =>
+  new Promise<ReadableHTMLStream>(resolve =>
     setTimeout(() => resolve(<strong>world</strong>), 2000),
   )
 
@@ -53,7 +53,7 @@ example of an HTTP server which uses Silk to serve a web page:
 import { createServer } from 'node:http'
 import { Writable } from 'node:stream'
 import {
-  type ReadableHTMLTokenStream,
+  type ReadableHTMLStream,
   createElement,
   HTMLSerializingTransformStream,
 } from '@superhighway/silk'
@@ -82,7 +82,7 @@ createServer((_request, response) => {
 }).listen(port)
 
 const slowlyGetPlanet = () =>
-  new Promise<ReadableHTMLTokenStream>(resolve =>
+  new Promise<ReadableHTMLStream>(resolve =>
     setTimeout(() => resolve(<strong>world</strong>), 2000),
   )
 ```
