@@ -1,4 +1,4 @@
-import type { ReadableHTMLTokenStream } from './createElement.js'
+import type { ReadableHTMLStream } from './createElement.js'
 import { HTMLSerializingTransformStream } from './transformStreams.js'
 
 // TODO: Switch to `Array.fromAsync`.
@@ -12,7 +12,7 @@ export const arrayFromAsync = async <T>(
   return array
 }
 
-export const asArrayOfHTMLFragments = async (source: ReadableHTMLTokenStream) =>
+export const asArrayOfHTMLFragments = async (source: ReadableHTMLStream) =>
   arrayFromAsync(
     source.pipeThrough(
       new HTMLSerializingTransformStream({ includeDoctype: false }),
