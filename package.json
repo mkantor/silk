@@ -1,6 +1,6 @@
 {
   "name": "@superhighway/silk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "dependencies": {
     "@michijs/htmltype": "^0.4.2",
     "html-entities": "^2.6.0",
