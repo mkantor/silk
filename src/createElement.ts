@@ -15,9 +15,6 @@ import type { VoidElementTagName } from './voidElements.js'
 
 export type ReadableHTMLStream = ReadableStream<HTMLToken>
 
-/** @deprecated use `ReadableHTMLStream` instead */
-export type ReadableHTMLTokenStream = ReadableHTMLStream
-
 /** The type of the `...children` rest parameter of `createElement`. */
 export type Children<SpecificTagName extends TagName> =
   SpecificTagName extends VoidElementTagName
