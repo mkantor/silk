@@ -97,8 +97,31 @@ and for more elaborate examples, see <https://github.com/mkantor/silk-demos>.
 ## Client-Side Usage
 
 Silk can also be used client-side by translating the stream of
-[`HTMLToken`s][html-tokens] into DOM method calls. You can [see a complete
-example of this on StackBlitz][silk-example-client-stackblitz].
+[`HTMLToken`s][html-tokens] into DOM method calls. Silk exports a
+`consumeAsDOMChildren` helper function to make this straightforward; here's an
+example:
+
+```tsx
+import {
+  createElement,
+  consumeAsDOMChildren,
+  type ReadableHTMLStream,
+} from '@superhighway/silk'
+
+const slowlyGetPlanet = () =>
+  new Promise<ReadableHTMLStream>(resolve =>
+    setTimeout(() => resolve(<strong>world</strong>), 2000),
+  )
+
+const container = document.getElementById('app')
+if (container === null) {
+  throw new Error('Container element does not exist')
+}
+
+await consumeAsDOMChildren(container, <>Hello, {slowlyGetPlanet()}!</>)
+```
+
+You can [try this on StackBlitz][silk-example-client-stackblitz].
 
 ## Why Streaming?
 
