@@ -2,6 +2,7 @@ import assert from 'node:assert'
 import test, { suite } from 'node:test'
 import { consumeAsDOMChildren } from './dom.js'
 import { createElement } from './jsx.js'
+import { createMockElement } from './testUtilities.test.js'
 
 suite('dom', _ => {
   test('empty fragment', async _ => {
@@ -94,35 +95,4 @@ suite('dom', _ => {
       ],
     })
   })
-})
-
-type MockElement = {
-  tagName: string
-  attributes: Map<string, string>
-  content: (string | MockElement)[]
-  parentElement: MockElement | null
-  readonly ownerDocument: {
-    readonly createElement: (tagName: string) => MockElement
-  }
-  readonly setAttribute: (name: string, value: string) => void
-  readonly append: (...nodes: readonly (MockElement | string)[]) => void
-}
-
-const createMockElement = (tagName: string): MockElement => ({
-  tagName,
-  attributes: new Map(),
-  content: [],
-  parentElement: null,
-  ownerDocument: { createElement: createMockElement },
-  setAttribute(name, value) {
-    this.attributes.set(name, value)
-  },
-  append(...nodes) {
-    for (const node of nodes) {
-      if (typeof node !== 'string') {
-        node.parentElement = this
-      }
-      this.content.push(node)
-    }
-  },
 })

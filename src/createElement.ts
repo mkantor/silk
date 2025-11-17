@@ -1,8 +1,9 @@
 import {
-  attributesToReadableHTMLStream,
+  attributesToReadableStream,
   type AttributesByTagName,
 } from './attributes.js'
 import type { HTMLToken } from './htmlToken.js'
+import { ReadableHTMLStream } from './readableHTMLStream.js'
 import {
   concatReadableStreams,
   readableStreamFromChunk,
@@ -12,8 +13,6 @@ import {
 import type { TagName } from './tagName.js'
 import { TextCapturingTransformStream } from './transformStreams.js'
 import type { VoidElementTagName } from './voidElements.js'
-
-export type ReadableHTMLStream = ReadableStream<HTMLToken>
 
 /** The type of the `...children` rest parameter of `createElement`. */
 export type Children<SpecificTagName extends TagName> =
@@ -38,8 +37,8 @@ export const createElement: (
 ) => {
   const childrenAsStreams = children.map(child =>
     isReadonlyArray(child)
-      ? concatReadableStreams(child.map(childToReadableHTMLStream))
-      : childToReadableHTMLStream(child),
+      ? concatReadableStreams(child.map(childToReadableStream))
+      : childToReadableStream(child),
   )
 
   const streamComponents =
@@ -52,15 +51,15 @@ export const createElement: (
             kind: 'startOfOpeningTag',
             tagName: tagNameOrFragmentFunction,
           }),
-          attributesToReadableHTMLStream(attributes ?? {}),
+          attributesToReadableStream(attributes ?? {}),
           readableStreamFromChunk({ kind: 'endOfOpeningTag' }),
 
           ...childrenAsStreams,
 
           readableStreamFromChunk({ kind: 'closingTag' }),
-        ] satisfies readonly ReadableHTMLStream[])
+        ] satisfies readonly ReadableStream<HTMLToken>[])
 
-  return concatReadableStreams(streamComponents)
+  return ReadableHTMLStream.fromConcatenatedReadableStreams(streamComponents)
 }
 
 type CreateElementParameters =
@@ -81,11 +80,11 @@ type CreateFragmentParameters = readonly [
 
 type Child =
   | string
-  | Promise<string | ReadableStream<string> | ReadableHTMLStream>
+  | Promise<string | ReadableStream<string> | ReadableStream<HTMLToken>>
   | AsyncIterable<string>
-  | ReadableHTMLStream
+  | ReadableStream<HTMLToken>
 
-const childToReadableHTMLStream = (child: Child): ReadableHTMLStream => {
+const childToReadableStream = (child: Child): ReadableStream<HTMLToken> => {
   let stream =
     typeof child === 'object' && Symbol.asyncIterator in child
       ? readableStreamFromIterable<HTMLToken | string>(child)

@@ -1,8 +1,6 @@
 import type { AttributesByTagName } from './attributes.js'
-import type {
-  Children as CreateElementChildren,
-  ReadableHTMLStream,
-} from './createElement.js'
+import type { Children as CreateElementChildren } from './createElement.js'
+import type { ReadableHTMLStream } from './readableHTMLStream.js'
 import type { TagName } from './tagName.js'
 
 export { createElement } from './createElement.js'

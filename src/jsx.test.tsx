@@ -1,12 +1,16 @@
 import assert from 'node:assert'
 import test, { suite } from 'node:test'
-import type { ReadableHTMLStream } from './createElement.js'
 import { createElement } from './jsx.js'
+import type { ReadableHTMLStream } from './readableHTMLStream.js'
 import {
   readableStreamFromChunk,
   readableStreamFromIterable,
 } from './readableStream.js'
-import { asArrayOfHTMLFragments } from './testUtilities.test.js'
+import {
+  arrayFromAsync,
+  asArrayOfHTMLFragments,
+  createMockElement,
+} from './testUtilities.test.js'
 
 suite('jsx', _ => {
   test('empty fragment', async _ =>
@@ -255,6 +259,44 @@ suite('jsx', _ => {
       ),
       ['<div', '>', 'a', '&lt;&amp;&gt;', 'b', '</div>'],
     ))
+
+  test('consume DOM children', async _ => {
+    const container = createMockElement('root')
+    await (<div>a</div>).consumeAsDOMChildren(container)
+    assert.partialDeepStrictEqual(container, {
+      parentElement: null,
+      tagName: 'root',
+      attributes: new Map(),
+      content: [
+        {
+          parentElement: { tagName: 'root' },
+          tagName: 'div',
+          attributes: new Map(),
+          content: ['a'],
+        },
+      ],
+    })
+  })
+
+  test('convert to strings', async _ => {
+    const html = await arrayFromAsync(
+      (<div>a</div>).asStrings({ includeDoctype: false }),
+    )
+    assert.deepEqual(html, ['<div', '>', 'a', '</div>'])
+  })
+
+  test('convert to bytes', async _ => {
+    const html = await arrayFromAsync(
+      (<div>a</div>).asBytes({ includeDoctype: false }),
+    )
+    const encoder = new TextEncoder()
+    assert.deepEqual(html, [
+      encoder.encode('<div'),
+      encoder.encode('>'),
+      encoder.encode('a'),
+      encoder.encode('</div>'),
+    ])
+  })
 })
 
 // Type-level tests:
