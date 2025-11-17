@@ -65,7 +65,6 @@ const htmlTokenToHTMLFragment = (
     case 'text':
       return escapeHTMLContent(chunk.text)
     case 'startOfOpeningTag':
-      currentTagName = chunk.tagName
       return '<'.concat(chunk.tagName) as SerializedHTMLFragment
     case 'attribute':
       return (
