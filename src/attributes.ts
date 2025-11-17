@@ -34,7 +34,7 @@ export type AttributesByTagName = {
  * The returned `ReadableStream` will emit an error if any attributes are
  * invalid.
  */
-export const attributesToReadableHTMLStream = (
+export const attributesToReadableStream = (
   attributes: UnknownAttributes,
 ): ReadableStream<AttributeHTMLToken> =>
   readableStreamFromIterable(Object.entries(attributes)).pipeThrough(

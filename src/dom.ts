@@ -1,4 +1,4 @@
-import type { ReadableHTMLStream } from './createElement.js'
+import type { ReadableHTMLStream } from './readableHTMLStream.js'
 
 /**
  * Reads `HTMLToken`s from `htmlStream` and uses them to update the DOM tree
@@ -46,7 +46,7 @@ export const consumeAsDOMChildren = async (
 // To avoid pulling in global DOM types (which could be problematic for
 // server-side usage), the necessary subset of the `Element` API is re-specified
 // here.
-type ElementLike = {
+export type ElementLike = {
   readonly ownerDocument: {
     readonly createElement: (tagName: string) => ElementLike
   }
