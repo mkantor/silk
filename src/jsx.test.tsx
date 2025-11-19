@@ -278,6 +278,41 @@ suite('jsx', _ => {
     })
   })
 
+  test('consume empty fragment as DOM children', async _ => {
+    const container = createMockElement('root')
+    await (<></>).consumeAsDOMChildren(container)
+    assert.partialDeepStrictEqual(container, {
+      parentElement: null,
+      tagName: 'root',
+      attributes: new Map(),
+      content: [],
+    })
+  })
+
+  test('consume non-empty fragment as DOM children', async _ => {
+    const container = createMockElement('root')
+    await (
+      <>
+        Hello, <strong>world</strong>!
+      </>
+    ).consumeAsDOMChildren(container)
+    assert.partialDeepStrictEqual(container, {
+      parentElement: null,
+      tagName: 'root',
+      attributes: new Map(),
+      content: [
+        'Hello, ',
+        {
+          parentElement: { tagName: 'root' },
+          tagName: 'strong',
+          attributes: new Map(),
+          content: ['world'],
+        },
+        '!',
+      ],
+    })
+  })
+
   test('convert to strings', async _ => {
     const html = await arrayFromAsync(
       (<div>a</div>).asStrings({ includeDoctype: false }),
