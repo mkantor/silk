@@ -46,17 +46,14 @@ Also, `import { createElement } from '@superhighway/silk'` in each of your
 ## Server-Side Usage
 
 If you're using Silk for server-side rendering and want a stream to pipe out as
-the HTTP response, `HTMLSerializingTransformStream` has you covered. Here's an
-example of an HTTP server which uses Silk to serve a web page:
+the HTTP response, use the `asBytes` or `asStrings` method to transform the
+[`HTMLToken`s][html-tokens] into serialized HTML. Here's an example of an HTTP
+server which uses Silk to serve a web page:
 
 ```tsx
 import { createServer } from 'node:http'
 import { Writable } from 'node:stream'
-import {
-  type ReadableHTMLStream,
-  createElement,
-  HTMLSerializingTransformStream,
-} from '@superhighway/silk'
+import { createElement, type ReadableHTMLStream } from '@superhighway/silk'
 
 const port = 80
 
@@ -72,11 +69,7 @@ createServer((_request, response) => {
 
   response.setHeader('Content-Type', 'text/html; charset=utf-8')
   document
-    .pipeThrough(
-      new HTMLSerializingTransformStream({
-        includeDoctype: true,
-      }),
-    )
+    .asBytes({ includeDoctype: true })
     .pipeTo(Writable.toWeb(response))
     .catch(console.error)
 }).listen(port)
@@ -97,16 +90,11 @@ and for more elaborate examples, see <https://github.com/mkantor/silk-demos>.
 ## Client-Side Usage
 
 Silk can also be used client-side by translating the stream of
-[`HTMLToken`s][html-tokens] into DOM method calls. Silk exports a
-`consumeAsDOMChildren` helper function to make this straightforward; here's an
-example:
+[`HTMLToken`s][html-tokens] into DOM method calls. The `consumeAsDOMChildren`
+method makes this straightforward; here's an example:
 
 ```tsx
-import {
-  createElement,
-  consumeAsDOMChildren,
-  type ReadableHTMLStream,
-} from '@superhighway/silk'
+import { createElement, type ReadableHTMLStream } from '@superhighway/silk'
 
 const slowlyGetPlanet = () =>
   new Promise<ReadableHTMLStream>(resolve =>
@@ -118,7 +106,7 @@ if (container === null) {
   throw new Error('Container element does not exist')
 }
 
-await consumeAsDOMChildren(container, <>Hello, {slowlyGetPlanet()}!</>)
+await (<>Hello, {slowlyGetPlanet()}!</>).consumeAsDOMChildren(container)
 ```
 
 You can [try this on StackBlitz][silk-example-client-stackblitz].

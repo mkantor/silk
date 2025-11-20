@@ -36,6 +36,94 @@ suite('ReadableHTMLStream', _ => {
     })
   })
 
+  test('consume DOM children from non-trivial stream', async _ => {
+    const container = createMockElement('root')
+    await ReadableHTMLStream.fromConcatenatedReadableStreams([
+      // <div id="test">
+      readableStreamFromChunk({
+        kind: 'startOfOpeningTag',
+        tagName: 'div',
+      }),
+      readableStreamFromChunk({
+        kind: 'attribute',
+        name: 'id',
+        value: 'test',
+      }),
+      readableStreamFromChunk({
+        kind: 'endOfOpeningTag',
+      }),
+
+      // <h1>title</h1>
+      readableStreamFromChunk({
+        kind: 'startOfOpeningTag',
+        tagName: 'h1',
+      }),
+      readableStreamFromChunk({
+        kind: 'endOfOpeningTag',
+      }),
+      readableStreamFromChunk({
+        kind: 'text',
+        text: 'title',
+      }),
+      readableStreamFromChunk({
+        kind: 'closingTag',
+      }),
+
+      // <p class="classy">text</p>
+      readableStreamFromChunk({
+        kind: 'startOfOpeningTag',
+        tagName: 'p',
+      }),
+      readableStreamFromChunk({
+        kind: 'attribute',
+        name: 'class',
+        value: 'classy',
+      }),
+      readableStreamFromChunk({
+        kind: 'endOfOpeningTag',
+      }),
+      readableStreamFromChunk({
+        kind: 'text',
+        text: 'text',
+      }),
+      readableStreamFromChunk({
+        kind: 'closingTag',
+      }),
+
+      // </div>
+      readableStreamFromChunk({
+        kind: 'closingTag',
+      }),
+    ]).consumeAsDOMChildren(container)
+
+    assert.partialDeepStrictEqual(container, {
+      parentElement: null,
+      tagName: 'root',
+      attributes: new Map(),
+      content: [
+        {
+          parentElement: { tagName: 'root' },
+          tagName: 'div',
+          attributes: new Map([['id', 'test']]),
+          content: [
+            {
+              parentElement: { tagName: 'div' },
+              tagName: 'h1',
+              attributes: new Map(),
+              content: ['title'],
+            },
+            {
+              parentElement: { tagName: 'div' },
+              tagName: 'p',
+              attributes: new Map([['class', 'classy']]),
+              content: ['text'],
+            },
+          ],
+        },
+      ],
+    })
+  })
+
   test('empty stream as strings without doctype', async _ => {
     const html = await arrayFromAsync(
       ReadableHTMLStream.fromConcatenatedReadableStreams([]).asStrings({
