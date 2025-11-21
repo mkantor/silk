@@ -20,17 +20,8 @@ export type Children<SpecificTagName extends TagName> =
     ? readonly []
     : readonly (Child | readonly Child[])[]
 
-/**
- * Creates an HTML element from the given tag name, attributes, and children,
- * returning a `ReadableStream`. Children may be supplied asynchronously as
- * `Promise`s and/or async iterables.
- */
-export const createElement: (
-  ...[tagName, attributes, ...children]: CreateElementParameters
-) => ReadableHTMLStream = (
-  // This function gets called for fragments too. Direct callers of
-  // `createElement` shouldn't have to see the function parameter, so the
-  // externally-visible type above excludes `CreateFragmentParameters`.
+export const createElement = (
+  // This function gets called for fragments too.
   ...[tagNameOrFragmentFunction, attributes, ...children]:
     | CreateElementParameters
     | CreateFragmentParameters
@@ -62,7 +53,7 @@ export const createElement: (
   return ReadableHTMLStream.fromConcatenatedReadableStreams(streamComponents)
 }
 
-type CreateElementParameters =
+export type CreateElementParameters =
   | {
       readonly [SpecificTagName in TagName]: readonly [
         tagName: SpecificTagName,
