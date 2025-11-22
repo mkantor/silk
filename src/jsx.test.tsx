@@ -378,6 +378,12 @@ try {
   // @ts-expect-error
   ;<div role={Promise.resolve('some arbitrary string')}></div>
 
+  // @ts-expect-error
+  ;<div>{Symbol()}</div>
+
+  // @ts-expect-error
+  ;<>{Symbol()}</>
+
   // Promises resolving to union types of valid literals should be valid.
   ;<div role={Promise.resolve(Math.random() > 0.5 ? 'alert' : 'text')}></div>
 
