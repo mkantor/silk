@@ -8,14 +8,17 @@
   },
   "devDependencies": {
     "@types/node": "^24.5.1",
-    "typescript": "^5.9.2"
+    "typescript": "^6.0.2"
   },
   "files": [
     "dist/*"
   ],
   "license": "MIT",
   "main": "dist/index.js",
-  "repository": "github:mkantor/silk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mkantor/silk.git"
+  },
   "scripts": {
     "build": "tsc --build tsconfig.main.json",
     "build:tests": "tsc --project tsconfig.main.json --outDir dist-test --declarationDir dist && tsc --build tsconfig.test.json",
