@@ -73,7 +73,7 @@ suite('createElement', _ => {
   test('element with escaped text content', async _ =>
     assert.deepEqual(
       await asArrayOfHTMLFragments(createElement('div', {}, '<&>')),
-      ['<div', '>', '&lt;&amp;&gt;', '</div>'],
+      ['<div', '>', '&lt;&amp;>', '</div>'],
     ))
 
   test('false boolean attribute', async _ =>
@@ -93,7 +93,7 @@ suite('createElement', _ => {
       await asArrayOfHTMLFragments(
         createElement('div', {}, Promise.resolve('<&>')),
       ),
-      ['<div', '>', '&lt;&amp;&gt;', '</div>'],
+      ['<div', '>', '&lt;&amp;>', '</div>'],
     ))
 
   test('stream content', async _ =>
@@ -101,7 +101,7 @@ suite('createElement', _ => {
       await asArrayOfHTMLFragments(
         createElement('div', {}, readableStreamFromChunk('<&>')),
       ),
-      ['<div', '>', '&lt;&amp;&gt;', '</div>'],
+      ['<div', '>', '&lt;&amp;>', '</div>'],
     ))
 
   test('promise of stream content', async _ =>
