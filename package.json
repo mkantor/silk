@@ -4,7 +4,6 @@
   "//": "Note: @michijs/htmltype 0.4.10 is broken (see https://github.com/michijs/htmltype/issues/257), so it's locked specifically to 0.4.9 below.",
   "dependencies": {
     "@michijs/htmltype": "0.4.9",
-    "html-entities": "^2.6.0",
     "html-tags": "^5.1.0"
   },
   "devDependencies": {

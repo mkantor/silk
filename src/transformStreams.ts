@@ -1,4 +1,3 @@
-import * as htmlEntities from 'html-entities'
 import { type HTMLToken } from './htmlToken.js'
 import type { TagName } from './tagName.js'
 import { isVoidElementTagName } from './voidElements.js'
@@ -63,14 +62,19 @@ const htmlTokenToHTMLFragment = (
 ): SerializedHTMLFragment => {
   switch (chunk.kind) {
     case 'text':
-      return escapeHTMLContent(chunk.text)
+      return encodeTextContent(chunk.text)
     case 'startOfOpeningTag':
       return '<'.concat(chunk.tagName) as SerializedHTMLFragment
     case 'attribute':
       return (
         chunk.value === ''
           ? ' '.concat(chunk.name)
-          : ' '.concat(chunk.name, '="', escapeHTMLContent(chunk.value), '"')
+          : ' '.concat(
+              chunk.name,
+              '="',
+              encodeDoubleQuotedAttributeContent(chunk.value),
+              '"',
+            )
       ) as SerializedHTMLFragment
     case 'endOfOpeningTag':
       return '>' as SerializedHTMLFragment
@@ -88,9 +92,30 @@ const htmlTokenToHTMLFragment = (
   }
 }
 
-const escapeHTMLContent = (content: string): SerializedHTMLFragment =>
-  htmlEntities.encode(content, {
-    mode: 'specialChars',
-    level: 'html5',
-    numeric: 'hexadecimal',
-  }) as SerializedHTMLFragment
+const textContentEncodings: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+}
+const textContentEncodingPattern = new RegExp(
+  `[${Object.keys(textContentEncodings).join('')}]`,
+  'g',
+)
+const encodeTextContent = (content: string) =>
+  content.replace(
+    textContentEncodingPattern,
+    character => textContentEncodings[character] ?? character,
+  ) as SerializedHTMLFragment
+
+const doubleQuotedAttributeContentEncodings: Record<string, string> = {
+  '&': '&amp;',
+  '"': '&quot;',
+}
+const doubleQuotedAttributeContentEncodingPattern = new RegExp(
+  `[${Object.keys(doubleQuotedAttributeContentEncodings).join('')}]`,
+  'g',
+)
+const encodeDoubleQuotedAttributeContent = (content: string) =>
+  content.replace(
+    doubleQuotedAttributeContentEncodingPattern,
+    character => doubleQuotedAttributeContentEncodings[character] ?? character,
+  ) as SerializedHTMLFragment

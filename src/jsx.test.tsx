@@ -136,7 +136,7 @@ suite('jsx', _ => {
   test('element with event handler attribute', async _ => {
     assert.deepEqual(
       await asArrayOfHTMLFragments(<div onclick="alert('hi')"></div>),
-      ['<div', ' onclick="alert(&apos;hi&apos;)"', '>', '</div>'],
+      ['<div', ' onclick="alert(\'hi\')"', '>', '</div>'],
     )
   })
 
@@ -181,7 +181,7 @@ suite('jsx', _ => {
     assert.deepEqual(await asArrayOfHTMLFragments(<div>{'<&>'}</div>), [
       '<div',
       '>',
-      '&lt;&amp;&gt;',
+      '&lt;&amp;>',
       '</div>',
     ]))
 
@@ -230,7 +230,7 @@ suite('jsx', _ => {
   test('stream content', async _ =>
     assert.deepEqual(
       await asArrayOfHTMLFragments(<div>{readableStreamFromChunk('<&>')}</div>),
-      ['<div', '>', '&lt;&amp;&gt;', '</div>'],
+      ['<div', '>', '&lt;&amp;>', '</div>'],
     ))
 
   test('array children', async _ => {
@@ -257,7 +257,7 @@ suite('jsx', _ => {
           {Promise.resolve(readableStreamFromIterable(['a', '<&>', 'b']))}
         </div>,
       ),
-      ['<div', '>', 'a', '&lt;&amp;&gt;', 'b', '</div>'],
+      ['<div', '>', 'a', '&lt;&amp;>', 'b', '</div>'],
     ))
 
   test('consume DOM children', async _ => {
